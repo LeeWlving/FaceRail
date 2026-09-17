@@ -31,5 +31,11 @@
 
 /public/assets
 
+# ONNX Runtime profiling output and local model weights.
+/*.ses
+!/storage/models/
+/storage/models/*
+!/storage/models/.keep
+
 # Ignore key files for decrypting credentials and more.
 /config/*.key

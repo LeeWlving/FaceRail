@@ -1,14 +1,32 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  concern :face_search_api do
+    get "common/health/check", to: "health#show"
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+    post "visual/collect/create", to: "collections#create"
+    get "visual/collect/delete", to: "collections#destroy"
+    get "visual/collect/get", to: "collections#show"
+    get "visual/collect/list", to: "collections#index"
+
+    post "visual/sample/create", to: "samples#create"
+    post "visual/sample/update", to: "samples#update"
+    get "visual/sample/delete", to: "samples#destroy"
+    get "visual/sample/get", to: "samples#show"
+    get "visual/sample/list", to: "samples#index"
+
+    post "visual/face/create", to: "faces#create"
+    get "visual/face/delete", to: "faces#destroy"
+
+    post "visual/search/do", to: "searches#create"
+    post "visual/compare/do", to: "comparisons#create"
+  end
+
+  scope module: :api do
+    concerns :face_search_api
+  end
+
+  scope "/api", module: :api, as: :api do
+    concerns :face_search_api
+  end
 end
