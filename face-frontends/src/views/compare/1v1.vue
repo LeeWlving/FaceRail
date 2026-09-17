@@ -1,106 +1,85 @@
 <template>
-  <el-card>
-    <div slot="header" class="clearfix">
-      <el-form label-width="100px" ref="form" :model="formData">
-        <el-form-item label="图像A" prop="imageBase64A" required>
-          <el-upload
-              class="avatar-uploader" action=""
-              :show-file-list="false"
-              :before-upload="handleUpload"
-          >
-            <el-image
-                v-if="formData.imageBase64A"
-                style="width: 100px; height: 100px"
-                :src="imageTypeA + formData.imageBase64A">
-            </el-image>
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-          </el-upload>
-        </el-form-item>
-        <el-form-item label="图像B" prop="imageBase64B" required>
-          <el-upload
-              class="avatar-uploader" action=""
-              :show-file-list="false"
-              :before-upload="handleUploadB"
-          >
-            <el-image
-                v-if="formData.imageBase64B"
-                style="width: 100px; height: 100px"
-                :src="imageTypeB + formData.imageBase64B">
-            </el-image>
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-          </el-upload>
-        </el-form-item>
-        <el-form-item label="质量阈值" prop="faceScoreThreshold">
-          <el-slider
-              v-model="formData.faceScoreThreshold"
-              show-stops
-              :min="0"
-              :max="100">
-          </el-slider>
-        </el-form-item>
-        <el-form-item label="返回信息" prop="needFaceInfo">
-          <el-checkbox v-model="formData.needFaceInfo"/>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="onSubmit">立即比对</el-button>
-        </el-form-item>
-      </el-form>
-      <el-row v-if="result">
-        <el-col :span="12">
-          <draw-rect-image :face-image="imageTypeA + formData.imageBase64A" v-bind="result.faceInfo.locationA" :text="result.confidence + '%'"/>
-        </el-col>
-        <el-col :span="12">
-          <draw-rect-image :face-image="imageTypeB + formData.imageBase64B" v-bind="result.faceInfo.locationB" :text="result.confidence + '%'"/>
-        </el-col>
-      </el-row>
+  <PageHeader title="人脸比对" description="分别提取两张图片的人脸向量，返回相似度置信分和欧氏距离。" />
+  <section class="workspace-panel">
+    <div class="panel-heading"><h2>比对图片</h2><ScanFace :size="18" /></div>
+    <div class="panel-body">
+      <div class="compare-images">
+        <div><span class="image-label">图片 A</span><ImageDropzone v-model="form.imageBase64A" v-model:preview-url="previewA" label="选择第一张图片" /></div>
+        <div><span class="image-label">图片 B</span><ImageDropzone v-model="form.imageBase64B" v-model:preview-url="previewB" label="选择第二张图片" /></div>
+      </div>
+      <div class="compare-controls">
+        <div class="threshold-control"><span>人脸质量阈值 {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
+        <el-checkbox v-model="form.needFaceInfo">返回人脸位置与质量分</el-checkbox>
+        <el-button type="primary" :loading="loading" @click="submit"><GitCompareArrows :size="17" />开始比对</el-button>
+      </div>
     </div>
-  </el-card>
+  </section>
+
+  <section v-if="result" class="workspace-panel compare-result">
+    <div class="panel-heading"><h2>比对结果</h2><span class="result-grade">{{ grade }}</span></div>
+    <div class="panel-body">
+      <div class="metrics">
+        <div><span>相似度置信分</span><strong>{{ format(result.confidence) }}</strong><small>-100 至 100，越高越相似</small></div>
+        <div><span>向量欧氏距离</span><strong>{{ format(result.distance, 4) }}</strong><small>距离越小越相似</small></div>
+      </div>
+      <div v-if="result.faceInfo" class="face-previews">
+        <div><FaceOverlay :image-url="previewA" :boxes="[{ ...result.faceInfo.locationA, label: `质量分 ${format(result.faceInfo.faceScoreA)}` }]" /></div>
+        <div><FaceOverlay :image-url="previewB" :boxes="[{ ...result.faceInfo.locationB, label: `质量分 ${format(result.faceInfo.faceScoreB)}` }]" /></div>
+      </div>
+    </div>
+  </section>
 </template>
 
-<script>
-import {BlobToDataURL} from "@/utils/FileUtil";
-import {search} from "@/api/compare";
-import DrawRectImage from "@/components/DrawRectImage";
+<script setup>
+import { computed, reactive, ref } from 'vue'
+import { GitCompareArrows, ScanFace } from '@lucide/vue'
+import PageHeader from '@/components/PageHeader.vue'
+import FaceOverlay from '@/components/FaceOverlay.vue'
+import ImageDropzone from '@/components/ImageDropzone.vue'
+import * as compareApi from '@/api/compare'
 
-export default {
-  name: "Compare1v1",
-  components: {DrawRectImage},
-  data () {
-    return {
-      formData: {
-      },
-      imageTypeA: null,
-      imageTypeB: null,
-      result: null
-    }
-  },
-  methods: {
-    handleUpload (file, isA = true) {
-      BlobToDataURL(file, base64Url => {
-        let b64split = base64Url.split(',')
-        base64Url = b64split[1]
-        this['imageType' + (isA ? 'A' : 'B')] = b64split[0] + ','
-        this.$set(this.formData, 'imageBase64' + (isA ? 'A' : 'B'), base64Url)
-      });
-      return false
-    },
-    handleUploadB (file) {
-      return this.handleUpload(file, false)
-    },
-    onSubmit () {
-      this.faces = null
-      this.$refs.form.validate(success => {
-        if (success) {
-          search(this.formData).then(res => {
-            this.result = res.data.data
-          })
-        }
-      })
-    }
+const previewA = ref('')
+const previewB = ref('')
+const loading = ref(false)
+const result = ref(null)
+const form = reactive({ imageBase64A: '', imageBase64B: '', faceScoreThreshold: 0, needFaceInfo: true })
+const grade = computed(() => {
+  if (!result.value) return ''
+  if (result.value.confidence >= 80) return '高度相似'
+  if (result.value.confidence >= 50) return '可能相似'
+  return '相似度较低'
+})
+
+function format(value, digits = 2) { return Number(value || 0).toFixed(digits) }
+async function submit() {
+  if (!form.imageBase64A || !form.imageBase64B) {
+    ElMessage.warning('请选择两张待比对图片')
+    return
+  }
+  loading.value = true
+  result.value = null
+  try {
+    result.value = await compareApi.compare(form)
+  } finally {
+    loading.value = false
   }
 }
 </script>
 
 <style scoped>
-
+.compare-images { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.image-label { display: block; margin-bottom: 8px; color: #4e5b57; font-size: 12px; font-weight: 700; }
+.compare-controls { display: grid; grid-template-columns: minmax(260px, 1fr) auto auto; align-items: end; gap: 24px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.threshold-control span { display: block; margin-bottom: 4px; color: #4e5b57; font-size: 11px; font-weight: 600; }
+.compare-result { margin-top: 18px; }
+.result-grade { color: var(--accent); font-size: 12px; font-weight: 700; }
+.metrics { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid var(--line); border-radius: 6px; }
+.metrics > div { padding: 22px; }
+.metrics > div + div { border-left: 1px solid var(--line); }
+.metrics span, .metrics strong, .metrics small { display: block; }
+.metrics span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.metrics strong { margin: 7px 0 4px; color: var(--accent); font-size: 30px; }
+.metrics small { color: var(--muted); font-size: 11px; }
+.face-previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+@media (max-width: 760px) { .compare-images, .face-previews, .metrics { grid-template-columns: 1fr; } .compare-controls { grid-template-columns: 1fr; } .metrics > div + div { border-top: 1px solid var(--line); border-left: 0; } }
 </style>

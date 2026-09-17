@@ -8,7 +8,7 @@ class FaceCollection < ApplicationRecord
   validates :namespace, presence: true, length: { maximum: 12 }, format: { with: NAME_FORMAT }
   validates :name, presence: true, length: { maximum: 24 }, format: { with: NAME_FORMAT }, uniqueness: { scope: :namespace }
   validates :description, length: { maximum: 128 }, allow_blank: true
-  validates :storage_engine, inclusion: { in: %w[CURR_DB ALI_OSS TCE_COS MIN_IO] }
+  validates :storage_engine, inclusion: { in: %w[ACTIVE_STORAGE] }
   validate :validate_column_definitions
 
   def api_attributes

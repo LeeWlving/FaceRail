@@ -40,7 +40,7 @@ module Api
         sample_columns: Array(input[:sampleColumns]).map(&:to_h),
         face_columns: Array(input[:faceColumns]).map(&:to_h),
         store_face_info: input[:storageFaceInfo] || false,
-        storage_engine: input[:storageEngine].presence || "CURR_DB",
+        storage_engine: "ACTIVE_STORAGE",
         shards_count: input[:shardsNum] || 0,
         replicas_count: input[:replicasNum] || 0
       }

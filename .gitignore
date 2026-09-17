@@ -1,5 +1,43 @@
 # Local upstream reference project
 /face-search/
 
+# Local deployment configuration.
+/.env
+
 # macOS
 .DS_Store
+
+# Backend Bundler configuration and installed gems.
+/face-backends/.bundle
+/face-backends/vendor/bundle
+
+# Backend environment and secret files.
+/face-backends/.env*
+/face-backends/config/*.key
+
+# Backend runtime files.
+/face-backends/log/*
+/face-backends/tmp/*
+!/face-backends/log/.keep
+!/face-backends/tmp/.keep
+!/face-backends/tmp/pids/
+/face-backends/tmp/pids/*
+!/face-backends/tmp/pids/.keep
+!/face-backends/tmp/storage/
+/face-backends/tmp/storage/*
+!/face-backends/tmp/storage/.keep
+
+# Backend uploads, databases, generated assets and local model weights.
+/face-backends/storage/*
+!/face-backends/storage/.keep
+!/face-backends/storage/models/
+/face-backends/storage/models/*
+!/face-backends/storage/models/.keep
+/face-backends/public/assets
+/face-backends/*.ses
+
+# Frontend dependencies, builds and local environment files.
+/face-frontends/node_modules/
+/face-frontends/dist/
+/face-frontends/.env*
+!/face-frontends/.env.example

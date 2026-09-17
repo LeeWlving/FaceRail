@@ -1,14 +1,19 @@
 require "test_helper"
+require "base64"
 
 class FaceSearchApiTest < ActionDispatch::IntegrationTest
   class FakeEngine
     def extract(image, score_threshold:, limit:)
+      image = Base64.strict_decode64(image)
+      return [] if image == "no-face"
+
       vector = image == "face-b" ? [0.8, 0.2] : [1.0, 0.0]
+      vector += Array.new(510, 0.0)
       [FaceRecognition::Result.new(
         score: 98.5,
         location: { x: 10, y: 20, w: 80, h: 90 },
         embedding: vector,
-        face_image: "cropped-image"
+        face_image: Base64.strict_encode64("cropped-image")
       )].first(limit)
     end
   end
@@ -61,14 +66,22 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
     create_sample
 
     post "/api/visual/face/create", params: sample_identity.merge(
-      imageBase64: "face-a",
+      imageBase64: encoded("face-a"),
       faceData: [{ key: "camera", value: "lobby" }]
     ), as: :json
     assert_success
     face_id = response_data.fetch("faceId")
+    assert_equal "pending", response_data.fetch("embeddingStatus")
+
+    face_record = FaceRecord.find_by!(face_key: face_id)
+    GenerateFaceEmbeddingJob.perform_now(face_record)
+    face_record.reload
+    assert face_record.embedding_ready?
+    assert face_record.source_image.attached?
+    assert face_record.face_image.attached?
 
     post "/api/visual/search/do", params: @collection.slice(:namespace, :collectionName).merge(
-      imageBase64: "face-a", limit: 5, maxFaceNum: 5, confidenceThreshold: 0
+      imageBase64: encoded("face-a"), limit: 20, maxFaceNum: 5, confidenceThreshold: 0
     ), as: :json
     assert_success
     match = response_data.first.fetch("match").first
@@ -76,7 +89,7 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
     assert_equal 100.0, match.fetch("confidence")
 
     post "/api/visual/compare/do", params: {
-      imageBase64A: "face-a", imageBase64B: "face-b", needFaceInfo: true
+      imageBase64A: encoded("face-a"), imageBase64B: encoded("face-b"), needFaceInfo: true
     }, as: :json
     assert_success
     assert response_data.fetch("confidence") > 90
@@ -100,6 +113,22 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
     assert_equal "collection is not exist", parsed_response.fetch("message")
   end
 
+  test "embedding failures are recorded for asynchronous face creation" do
+    post "/api/visual/collect/create", params: @collection, as: :json
+    create_sample
+
+    post "/api/visual/face/create", params: sample_identity.merge(imageBase64: encoded("no-face")), as: :json
+    assert_success
+
+    face_record = FaceRecord.find_by!(face_key: response_data.fetch("faceId"))
+    GenerateFaceEmbeddingJob.perform_now(face_record)
+    face_record.reload
+
+    assert face_record.embedding_failed?
+    assert_equal "image is not face", face_record.embedding_error
+    assert_nil face_record.embedding
+  end
+
   private
 
   def create_sample
@@ -114,6 +143,10 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
 
   def sample_identity
     { namespace: "people", collectionName: "employees", sampleId: "alice" }
+  end
+
+  def encoded(value)
+    Base64.strict_encode64(value)
   end
 
   def parsed_response

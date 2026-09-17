@@ -1,7 +1,3 @@
-export function search(data) {
-    return window.axios({
-        method: 'post',
-        url: '/api/visual/search/do',
-        data: data
-    })
-}
+import client from './client'
+
+export const search = (data) => client.post('/visual/search/do', data)

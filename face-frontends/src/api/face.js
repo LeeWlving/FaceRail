@@ -1,17 +1,4 @@
+import client from './client'
 
-export function create(face) {
-    return window.axios({
-        method: 'post',
-        url: '/api/visual/face/create',
-        data: face
-    })
-}
-
-export function remove({collectionName, namespace, sampleId, faceId}) {
-    return window.axios({
-        method: 'get',
-        url: '/api/visual/face/delete',
-        params: {collectionName, namespace, sampleId, faceId}
-    })
-}
-
+export const create = (data) => client.post('/visual/face/create', data)
+export const remove = (params) => client.get('/visual/face/delete', { params })

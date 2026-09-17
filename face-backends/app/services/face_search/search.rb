@@ -1,5 +1,8 @@
 module FaceSearch
   class Search
+    DEFAULT_LIMIT = 20
+    MAX_LIMIT = 100
+
     def initialize(params)
       @params = params
     end
@@ -13,16 +16,21 @@ module FaceSearch
       )
       raise Error, "image is not face" if query_faces.empty?
 
-      records = collection.face_records.includes(:face_sample).to_a
-      query_faces.map { |face| serialize_result(face, records) }
+      query_faces.map { |face| serialize_result(face, collection) }
     end
 
     private
 
-    def serialize_result(face, records)
+    def serialize_result(face, collection)
       threshold = @params[:confidenceThreshold].to_f
+      records = collection.face_records.searchable
+        .includes(:face_sample)
+        .nearest_neighbors(:embedding, face.embedding, distance: "cosine")
+        .limit(result_limit)
+
       matches = records.filter_map do |record|
-        confidence = FaceRecognition::Similarity.enhanced_cosine(face.embedding, record.embedding) * 100
+        cosine = 1 - record.neighbor_distance.to_f
+        confidence = FaceRecognition::Similarity.enhance(cosine) * 100
         next if confidence < threshold
 
         {
@@ -38,8 +46,12 @@ module FaceSearch
       {
         location: face.location,
         faceScore: face.score,
-        match: matches.sort_by { |match| -match[:confidence] }.first(positive_integer(@params[:limit], 5))
+        match: matches
       }
+    end
+
+    def result_limit
+      [positive_integer(@params[:limit], DEFAULT_LIMIT), MAX_LIMIT].min
     end
 
     def positive_integer(value, default)

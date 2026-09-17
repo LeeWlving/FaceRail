@@ -4,10 +4,10 @@ class CreateFaceCollections < ActiveRecord::Migration[8.1]
       t.string :namespace, null: false, limit: 12
       t.string :name, null: false, limit: 24
       t.string :description, limit: 128
-      t.json :sample_columns, null: false, default: []
-      t.json :face_columns, null: false, default: []
+      t.jsonb :sample_columns, null: false, default: []
+      t.jsonb :face_columns, null: false, default: []
       t.boolean :store_face_info, null: false, default: false
-      t.string :storage_engine, null: false, default: "CURR_DB"
+      t.string :storage_engine, null: false, default: "ACTIVE_STORAGE"
       t.integer :shards_count, null: false, default: 0
       t.integer :replicas_count, null: false, default: 0
 

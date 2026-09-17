@@ -1,97 +1,118 @@
 <template>
-  <el-container>
-    <el-container>
-      <el-aside width="182px" class="el-aside">
-        <el-menu
-            :router="true"
-            class="el-menu"
-            default-active="1">
-          <el-submenu index="collections">
-            <template slot="title">
-              <i class="el-icon-folder"></i>
-              <span>集合管理</span>
-            </template>
-            <el-menu-item index="/collect/create">创建集合</el-menu-item>
-            <el-menu-item index="/collect/remove">删除集合</el-menu-item>
-            <el-menu-item index="/collect/view">查看集合</el-menu-item>
-            <el-menu-item index="/collect/list">集合列表</el-menu-item>
-          </el-submenu>
-          <el-submenu index="sample">
-            <template slot="title">
-              <i class="el-icon-tickets"></i>
-              <span>样本管理</span>
-            </template>
-            <el-menu-item index="/sample/create">创建样本</el-menu-item>
-            <el-menu-item index="/sample/remove">删除样本</el-menu-item>
-            <el-menu-item index="/sample/view">查看样本</el-menu-item>
-            <el-menu-item index="/sample/list">样本列表</el-menu-item>
-<!--            <el-menu-item index="/sample/update">更新样本</el-menu-item>-->
-          </el-submenu>
-          <el-submenu index="face">
-            <template slot="title">
-              <i class="el-icon-document"></i>
-              <span>数据管理</span>
-            </template>
-            <el-menu-item index="/face/create">创建数据</el-menu-item>
-<!--            <el-menu-item index="/face/remove">删除数据</el-menu-item>-->
-          </el-submenu>
-          <el-submenu index="search">
-            <template slot="title">
-              <i class="el-icon-search"></i>
-              <span>搜索服务</span>
-            </template>
-            <el-menu-item index="/search/mVn">一对多搜索</el-menu-item>
-          </el-submenu>
-          <el-submenu index="compare">
-            <template slot="title">
-              <i class="el-icon-view"></i>
-              <span>比对服务</span>
-            </template>
-            <el-menu-item index="/compare/1v1">一对一比对</el-menu-item>
-          </el-submenu>
-<!--          <el-submenu index="common">-->
-<!--            <template slot="title">-->
-<!--              <i class="el-icon-reading"></i>-->
-<!--              <span>公共服务</span>-->
-<!--            </template>-->
-<!--            <el-menu-item index="/common/health/check">服务健康检测</el-menu-item>-->
-<!--          </el-submenu>-->
-        </el-menu>
-      </el-aside>
-      <el-main>
-        <router-view/>
-      </el-main>
-    </el-container>
-  </el-container>
+  <div class="app-shell">
+    <div v-if="drawerOpen" class="nav-backdrop" @click="drawerOpen = false"></div>
+    <aside class="sidebar" :class="{ 'sidebar--open': drawerOpen }">
+      <div class="brand-row">
+        <div class="brand-mark">FR</div>
+        <div>
+          <strong>FaceRail</strong>
+          <span>视觉检索控制台</span>
+        </div>
+        <el-tooltip content="关闭导航" placement="right">
+          <button class="icon-button sidebar-close" type="button" @click="drawerOpen = false">
+            <X :size="18" />
+          </button>
+        </el-tooltip>
+      </div>
+
+      <nav class="nav-groups" aria-label="主导航">
+        <section v-for="group in navigation" :key="group.label" class="nav-group">
+          <p>{{ group.label }}</p>
+          <RouterLink v-for="item in group.items" :key="item.to" :to="item.to" class="nav-item">
+            <component :is="item.icon" :size="18" />
+            <span>{{ item.label }}</span>
+            <ChevronRight class="nav-arrow" :size="15" />
+          </RouterLink>
+        </section>
+      </nav>
+
+      <div class="sidebar-status">
+        <span class="status-dot"></span>
+        <div>
+          <strong>Rails API</strong>
+          <span>PostgreSQL · pgvector</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <el-tooltip content="打开导航" placement="bottom">
+          <button class="icon-button menu-button" type="button" @click="drawerOpen = true">
+            <Menu :size="20" />
+          </button>
+        </el-tooltip>
+        <div class="breadcrumb">
+          <span>{{ route.meta.section }}</span>
+          <ChevronRight :size="14" />
+          <strong>{{ route.meta.title }}</strong>
+        </div>
+        <span class="topbar-version">API 2.1</span>
+      </header>
+
+      <div class="page-stage">
+        <RouterView v-slot="{ Component }">
+          <Transition name="page" mode="out-in">
+            <div :key="route.fullPath" class="route-page">
+              <component :is="Component" />
+            </div>
+          </Transition>
+        </RouterView>
+      </div>
+    </main>
+  </div>
 </template>
 
-<script>
-export default {
-  name: 'Home',
-  components: {
-  }
-}
+<script setup>
+import { ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+import {
+  ChevronRight,
+  CirclePlus,
+  Database,
+  Eye,
+  ListFilter,
+  Menu,
+  ScanFace,
+  Search,
+  Trash2,
+  UserRoundPlus,
+  Users,
+  X,
+} from '@lucide/vue'
+
+const route = useRoute()
+const drawerOpen = ref(false)
+
+const navigation = [
+  {
+    label: '识别',
+    items: [
+      { to: '/search', label: '人脸搜索', icon: Search },
+      { to: '/compare', label: '人脸比对', icon: ScanFace },
+    ],
+  },
+  {
+    label: '集合',
+    items: [
+      { to: '/collections', label: '集合列表', icon: Database },
+      { to: '/collections/create', label: '创建集合', icon: CirclePlus },
+      { to: '/collections/view', label: '查看集合', icon: Eye },
+      { to: '/collections/remove', label: '删除集合', icon: Trash2 },
+    ],
+  },
+  {
+    label: '数据',
+    items: [
+      { to: '/samples', label: '样本列表', icon: Users },
+      { to: '/samples/create', label: '创建样本', icon: UserRoundPlus },
+      { to: '/samples/view', label: '查看样本', icon: ListFilter },
+      { to: '/faces/create', label: '录入人脸', icon: ScanFace },
+    ],
+  },
+]
+
+watch(() => route.fullPath, () => {
+  drawerOpen.value = false
+})
 </script>
-
-<style>
-.el-aside {
-  background-color: #D3DCE6;
-  color: #333;
-  text-align: center;
-  line-height: 200px;
-  height: calc(100vh);
-  width: 182px;
-  overflow-x: hidden;
-}
-
-.el-main {
-  background-color: white;
-  color: #333;
-  height: calc(100vh);
-}
-
-.el-menu {
-  height: 100%;
-  overflow-x: hidden;
-}
-</style>

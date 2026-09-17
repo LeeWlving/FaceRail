@@ -1,32 +1,6 @@
+import client from './client'
 
-export function create(collect) {
-    return window.axios({
-        method: 'post',
-        url: '/api/visual/collect/create',
-        data: collect
-    })
-}
-
-export function remove({collectionName, namespace}) {
-    return window.axios({
-        method: 'get',
-        url: '/api/visual/collect/delete',
-        params: {collectionName, namespace}
-    })
-}
-
-export function view({collectionName, namespace}) {
-    return window.axios({
-        method: 'get',
-        url: '/api/visual/collect/get',
-        params: {collectionName, namespace}
-    })
-}
-
-export function list({namespace}) {
-    return window.axios({
-        method: 'get',
-        url: '/api/visual/collect/list',
-        params: {namespace}
-    })
-}
+export const create = (data) => client.post('/visual/collect/create', data)
+export const remove = (params) => client.get('/visual/collect/delete', { params })
+export const view = (params) => client.get('/visual/collect/get', { params })
+export const list = ({ namespace }) => client.get('/visual/collect/list', { params: { namespace } })

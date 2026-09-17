@@ -1,0 +1,60 @@
+# See https://docs.docker.com/engine/reference/builder/#dockerignore-file for more about ignoring files.
+
+# Ignore git directory.
+/.git/
+/.gitignore
+
+# Only the backend is copied into the Rails image.
+/face-frontends
+/face-search
+
+# Ignore backend bundler config.
+/face-backends/.bundle
+/face-backends/vendor/bundle
+
+# Ignore all environment files.
+/face-backends/.env*
+
+# Ignore all default key files.
+/face-backends/config/master.key
+/face-backends/config/credentials/*.key
+
+# Ignore all logfiles and tempfiles.
+/face-backends/log/*
+/face-backends/tmp/*
+!/face-backends/log/.keep
+!/face-backends/tmp/.keep
+
+# Ignore pidfiles, but keep the directory.
+/face-backends/tmp/pids/*
+!/face-backends/tmp/pids/.keep
+
+# Ignore storage (uploaded files in development and any SQLite databases).
+/face-backends/storage/*
+!/face-backends/storage/.keep
+!/face-backends/storage/models/
+/face-backends/storage/models/*
+!/face-backends/storage/models/.keep
+/face-backends/tmp/storage/*
+!/face-backends/tmp/storage/.keep
+
+# Ignore assets.
+/face-backends/node_modules/
+/face-backends/app/assets/builds/*
+!/face-backends/app/assets/builds/.keep
+/face-backends/public/assets
+/face-backends/*.ses
+
+# Ignore CI service files.
+/.github
+
+# Ignore Kamal files.
+/face-backends/config/deploy*.yml
+/face-backends/.kamal
+
+# Ignore development files
+/face-backends/.devcontainer
+
+# Ignore Docker-related files
+/.dockerignore
+/Dockerfile*
