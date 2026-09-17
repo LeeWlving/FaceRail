@@ -1,6 +1,6 @@
 <template>
   <div v-if="imageUrl" class="face-overlay">
-    <img :src="imageUrl" :alt="t('image.alt')" @load="onLoad" />
+    <img :src="imageUrl" alt="人脸分析图片" @load="onLoad" />
     <div
       v-for="(box, index) in boxes"
       :key="index"
@@ -14,7 +14,6 @@
 
 <script setup>
 import { reactive } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 defineProps({
   imageUrl: { type: String, default: '' },
@@ -22,7 +21,6 @@ defineProps({
 })
 
 const dimensions = reactive({ width: 1, height: 1 })
-const { t } = useI18n()
 function onLoad(event) {
   dimensions.width = event.target.naturalWidth || 1
   dimensions.height = event.target.naturalHeight || 1

@@ -1,60 +1,58 @@
 <template>
-  <PageHeader :title="t('collection.titleView')" :description="t('collection.descView')" />
+  <PageHeader title="查看集合" description="查看集合配置及样本、人脸扩展字段。" />
   <form class="query-bar" @submit.prevent="load">
-    <div class="query-field"><label for="namespace">{{ t('common.namespace') }}</label><el-input id="namespace" v-model="query.namespace" /></div>
-    <div class="query-field"><label for="collectionName">{{ t('common.collectionName') }}</label><el-input id="collectionName" v-model="query.collectionName" /></div>
-    <el-button native-type="submit" type="primary" :loading="loading"><Search :size="16" />{{ t('common.query') }}</el-button>
+    <div class="query-field"><label for="namespace">命名空间</label><el-input id="namespace" v-model="query.namespace" /></div>
+    <div class="query-field"><label for="collectionName">集合名称</label><el-input id="collectionName" v-model="query.collectionName" /></div>
+    <el-button native-type="submit" type="primary" :loading="loading"><Search :size="16" />查询</el-button>
   </form>
 
   <section v-if="collection" class="workspace-panel">
     <div class="panel-heading">
       <h2><span class="mono">{{ collection.namespace }}/{{ collection.collectionName }}</span></h2>
-      <el-button @click="openSamples"><Users :size="16" />{{ t('collection.viewSamples') }}</el-button>
+      <el-button @click="openSamples"><Users :size="16" />查看样本</el-button>
     </div>
     <div class="panel-body">
       <dl class="detail-grid">
-        <div><dt>{{ t('common.collectionDescription') }}</dt><dd>{{ collection.collectionComment || t('collection.notFilled') }}</dd></div>
-        <div><dt>{{ t('common.storage') }}</dt><dd>{{ collection.storageEngine || 'ACTIVE_STORAGE' }}</dd></div>
-        <div><dt>{{ t('collection.retainFace') }}</dt><dd>{{ t(collection.storageFaceInfo ? 'common.yes' : 'common.no') }}</dd></div>
-        <div><dt>{{ t('collection.shards') }}</dt><dd>{{ collection.shardsNum || 0 }} / {{ collection.replicasNum || 0 }}</dd></div>
+        <div><dt>集合描述</dt><dd>{{ collection.collectionComment || '未填写' }}</dd></div>
+        <div><dt>存储方式</dt><dd>{{ collection.storageEngine || 'ACTIVE_STORAGE' }}</dd></div>
+        <div><dt>保留人脸图片</dt><dd>{{ collection.storageFaceInfo ? '是' : '否' }}</dd></div>
+        <div><dt>分片 / 副本</dt><dd>{{ collection.shardsNum || 0 }} / {{ collection.replicasNum || 0 }}</dd></div>
       </dl>
 
-      <h3>{{ t('common.sampleFields') }}</h3>
-      <el-table :data="collection.sampleColumns || []" :empty-text="t('collection.noSampleFields')" size="small">
-        <el-table-column prop="name" :label="t('common.fieldName')" min-width="160" />
-        <el-table-column prop="dataType" :label="t('common.fieldType')" width="140" />
-        <el-table-column prop="comment" :label="t('common.fieldDescription')" min-width="220" />
+      <h3>样本字段</h3>
+      <el-table :data="collection.sampleColumns || []" empty-text="未定义样本字段" size="small">
+        <el-table-column prop="name" label="名称" min-width="160" />
+        <el-table-column prop="dataType" label="类型" width="140" />
+        <el-table-column prop="comment" label="描述" min-width="220" />
       </el-table>
 
-      <h3>{{ t('common.faceFields') }}</h3>
-      <el-table :data="collection.faceColumns || []" :empty-text="t('collection.noFaceFields')" size="small">
-        <el-table-column prop="name" :label="t('common.fieldName')" min-width="160" />
-        <el-table-column prop="dataType" :label="t('common.fieldType')" width="140" />
-        <el-table-column prop="comment" :label="t('common.fieldDescription')" min-width="220" />
+      <h3>人脸字段</h3>
+      <el-table :data="collection.faceColumns || []" empty-text="未定义人脸字段" size="small">
+        <el-table-column prop="name" label="名称" min-width="160" />
+        <el-table-column prop="dataType" label="类型" width="140" />
+        <el-table-column prop="comment" label="描述" min-width="220" />
       </el-table>
     </div>
   </section>
-  <div v-else class="empty-state"><div><Database :size="34" /><span>{{ t('collection.emptyDetails') }}</span></div></div>
+  <div v-else class="empty-state"><div><Database :size="34" /><span>输入集合标识查看配置</span></div></div>
 </template>
 
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Database, Search, Users } from '@lucide/vue'
-import { useI18n } from 'vue-i18n'
 import PageHeader from '@/components/PageHeader.vue'
 import * as collectApi from '@/api/collect'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
 const query = reactive({ namespace: String(route.query.namespace || ''), collectionName: String(route.query.collectionName || '') })
 const collection = ref(null)
 const loading = ref(false)
 
 async function load() {
   if (!query.namespace || !query.collectionName) {
-    ElMessage.warning(t('common.inputNamespaceCollection'))
+    ElMessage.warning('请输入命名空间和集合名称')
     return
   }
   loading.value = true

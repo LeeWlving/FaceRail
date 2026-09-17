@@ -4,8 +4,8 @@
       <h1>{{ title }}</h1>
       <p v-if="description">{{ description }}</p>
     </div>
-    <div v-if="$slots.actions || $slots.default" class="page-actions">
-      <slot name="actions"><slot></slot></slot>
+    <div v-if="$slots.actions" class="page-actions">
+      <slot name="actions"></slot>
     </div>
   </header>
 </template>

@@ -1,11 +1,11 @@
 <template>
-  <PageHeader :title="t('collection.titleCreate')" :description="t('collection.descCreate')" />
+  <PageHeader title="创建集合" description="定义命名空间、数据结构和人脸图片留存策略。" />
   <section class="workspace-panel">
-    <div class="panel-heading"><h2>{{ t('collection.config') }}</h2><Database :size="18" /></div>
+    <div class="panel-heading"><h2>集合配置</h2><Database :size="18" /></div>
     <div class="panel-body">
       <CollectionForm ref="formRef" v-model="form" />
       <div class="form-actions">
-        <el-button type="primary" :loading="saving" @click="submit"><Save :size="16" />{{ t('collection.create') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="submit"><Save :size="16" />创建集合</el-button>
       </div>
     </div>
   </section>
@@ -15,13 +15,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Database, Save } from '@lucide/vue'
-import { useI18n } from 'vue-i18n'
 import PageHeader from '@/components/PageHeader.vue'
 import CollectionForm from '@/components/CollectionForm.vue'
 import * as collectApi from '@/api/collect'
 
 const router = useRouter()
-const { t } = useI18n()
 const formRef = ref()
 const saving = ref(false)
 const form = ref({
@@ -38,7 +36,7 @@ async function submit() {
   saving.value = true
   try {
     await collectApi.create(form.value)
-    ElMessage.success(t('collection.created'))
+    ElMessage.success('集合创建成功')
     router.push({ path: '/collections', query: { namespace: form.value.namespace } })
   } finally {
     saving.value = false

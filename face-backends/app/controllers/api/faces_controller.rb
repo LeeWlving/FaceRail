@@ -10,16 +10,6 @@ module Api
       render_success(FaceSearch::CreateFace.new(input).call)
     end
 
-    def create_embedding
-      input = params.permit(
-        :namespace, :collectionName, :sampleId, :faceScore, :faceImageBase64,
-        :minConfidenceThresholdWithThisSample, :maxConfidenceThresholdWithOtherSample,
-        embedding: [], location: %i[x y w h], faceData: %i[key value]
-      )
-      input.require(%i[namespace collectionName sampleId embedding location])
-      render_success(FaceSearch::CreateFace.new(input).call_with_embedding)
-    end
-
     def destroy
       collection = FaceSearch::CollectionFinder.call(
         namespace: params.require(:namespace), collection_name: params.require(:collectionName)

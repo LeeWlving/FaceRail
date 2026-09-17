@@ -1,70 +1,63 @@
 <template>
-  <PageHeader :title="t('face.title')" :description="t('face.description')" />
+  <PageHeader title="录入人脸" description="上传样本图片后，后台任务会检测人脸并生成 ArcFace 向量。" />
   <div class="face-create-layout">
     <section class="workspace-panel">
-      <div class="panel-heading"><h2>{{ t('face.identity') }}</h2><ScanFace :size="18" /></div>
+      <div class="panel-heading"><h2>图片与归属</h2><ScanFace :size="18" /></div>
       <div class="panel-body">
-        <ImageDropzone v-model="form.imageBase64" v-model:preview-url="previewUrl" :label="t('image.chooseSample')" />
+        <ImageDropzone v-model="form.imageBase64" v-model:preview-url="previewUrl" label="选择样本人脸图片" />
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="identity-form">
           <div class="form-grid">
-            <el-form-item :label="t('common.namespace')" prop="namespace"><el-input v-model="form.namespace" /></el-form-item>
-            <el-form-item :label="t('common.collectionName')" prop="collectionName"><el-input v-model="form.collectionName" /></el-form-item>
-            <el-form-item :label="t('common.sampleId')" prop="sampleId"><el-input v-model="form.sampleId" /></el-form-item>
+            <el-form-item label="命名空间" prop="namespace"><el-input v-model="form.namespace" /></el-form-item>
+            <el-form-item label="集合名称" prop="collectionName"><el-input v-model="form.collectionName" /></el-form-item>
+            <el-form-item label="样本 ID" prop="sampleId"><el-input v-model="form.sampleId" /></el-form-item>
           </div>
         </el-form>
       </div>
     </section>
 
     <section class="workspace-panel">
-      <div class="panel-heading"><h2>{{ t('face.parameters') }}</h2><SlidersHorizontal :size="18" /></div>
+      <div class="panel-heading"><h2>识别参数</h2><SlidersHorizontal :size="18" /></div>
       <div class="panel-body">
         <div class="slider-field">
-          <div><strong>{{ t('face.threshold') }}</strong><span>{{ t('face.thresholdHint') }}</span></div>
+          <div><strong>人脸质量阈值</strong><span>0 使用模型默认值</span></div>
           <el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" show-input />
         </div>
         <div class="slider-field">
-          <div><strong>{{ t('face.sameThreshold') }}</strong><span>{{ t('face.sameHint') }}</span></div>
+          <div><strong>同样本最低相似度</strong><span>0 表示不检查类内相似度</span></div>
           <el-slider v-model="form.minConfidenceThresholdWithThisSample" :min="0" :max="100" show-input />
         </div>
         <div class="slider-field">
-          <div><strong>{{ t('face.otherThreshold') }}</strong><span>{{ t('face.otherHint') }}</span></div>
+          <div><strong>异样本最高相似度</strong><span>0 表示不检查类间冲突</span></div>
           <el-slider v-model="form.maxConfidenceThresholdWithOtherSample" :min="0" :max="100" show-input />
         </div>
         <div class="face-data"><FieldEditor v-model="form.faceData" mode="values" /></div>
-        <div class="inference-status"><component :is="inferenceMode === 'device' ? Laptop : Cloud" :size="15" /><span>{{ t(inferenceMode === 'device' ? 'ml.deviceReady' : 'ml.cloudReady') }}</span></div>
-        <div class="form-actions"><el-button type="primary" :loading="saving" @click="submit"><Upload :size="16" />{{ t('common.submit') }}</el-button></div>
+        <div class="form-actions"><el-button type="primary" :loading="saving" @click="submit"><Upload :size="16" />提交处理</el-button></div>
       </div>
     </section>
   </div>
 
   <section v-if="createdFace" class="workspace-panel result-panel">
-    <div class="panel-heading"><h2>{{ t(createdFace.embeddingStatus === 'ready' ? 'face.completed' : 'face.queued') }}</h2><StatusTag :status="createdFace.embeddingStatus" /></div>
+    <div class="panel-heading"><h2>已进入处理队列</h2><StatusTag :status="createdFace.embeddingStatus" /></div>
     <div class="panel-body created-result">
-      <div><span>{{ t('common.faceId') }}</span><strong class="mono">{{ createdFace.faceId }}</strong></div>
-      <div><span>{{ t('face.sample') }}</span><strong>{{ createdFace.sampleId }}</strong></div>
-      <el-button @click="openSample"><ArrowRight :size="16" />{{ t('face.viewStatus') }}</el-button>
+      <div><span>人脸 ID</span><strong class="mono">{{ createdFace.faceId }}</strong></div>
+      <div><span>样本</span><strong>{{ createdFace.sampleId }}</strong></div>
+      <el-button @click="openSample"><ArrowRight :size="16" />查看处理状态</el-button>
     </div>
   </section>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight, Cloud, Laptop, ScanFace, SlidersHorizontal, Upload } from '@lucide/vue'
-import { useI18n } from 'vue-i18n'
+import { ArrowRight, ScanFace, SlidersHorizontal, Upload } from '@lucide/vue'
 import PageHeader from '@/components/PageHeader.vue'
 import FieldEditor from '@/components/FieldEditor.vue'
 import ImageDropzone from '@/components/ImageDropzone.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import * as faceApi from '@/api/face'
-import * as collectApi from '@/api/collect'
-import { usePreferences } from '@/composables/usePreferences'
-import { extractFaces } from '@/ml/faceEngine'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
-const { inferenceMode } = usePreferences()
 const formRef = ref()
 const saving = ref(false)
 const previewUrl = ref('')
@@ -80,39 +73,18 @@ const form = reactive({
   faceData: [],
 })
 const required = (message) => [{ required: true, message, trigger: 'blur' }]
-const rules = computed(() => ({ namespace: required(t('validation.namespace')), collectionName: required(t('validation.collectionName')), sampleId: required(t('validation.sampleId')) }))
+const rules = { namespace: required('请输入命名空间'), collectionName: required('请输入集合名称'), sampleId: required('请输入样本 ID') }
 
 async function submit() {
   await formRef.value.validate()
   if (!form.imageBase64) {
-    ElMessage.warning(t('validation.image'))
+    ElMessage.warning('请选择人脸图片')
     return
   }
   saving.value = true
   try {
-    if (inferenceMode.value === 'cloud') {
-      createdFace.value = await faceApi.create(form)
-      ElMessage.success(t('face.cloudSuccess'))
-    } else {
-      const [face] = await extractFaces(previewUrl.value, { scoreThreshold: form.faceScoreThreshold, limit: 1 })
-      if (!face) throw Object.assign(new Error(t('ml.noFace')), { code: 'ml.noFace' })
-      const collection = await collectApi.view({ namespace: form.namespace, collectionName: form.collectionName })
-      createdFace.value = await faceApi.createEmbedding({
-        namespace: form.namespace,
-        collectionName: form.collectionName,
-        sampleId: form.sampleId,
-        faceScore: face.faceScore,
-        location: face.location,
-        embedding: face.embedding,
-        faceImageBase64: collection.storageFaceInfo ? face.faceImageBase64.split(',')[1] : undefined,
-        minConfidenceThresholdWithThisSample: form.minConfidenceThresholdWithThisSample,
-        maxConfidenceThresholdWithOtherSample: form.maxConfidenceThresholdWithOtherSample,
-        faceData: form.faceData,
-      })
-      ElMessage.success(t('face.deviceSuccess'))
-    }
-  } catch (error) {
-    if (error.code?.startsWith('ml.')) ElMessage.error(t(error.code))
+    createdFace.value = await faceApi.create(form)
+    ElMessage.success('人脸已提交，正在后台生成向量')
   } finally {
     saving.value = false
   }
@@ -132,8 +104,6 @@ function openSample() {
 .slider-field span { color: var(--muted); font-size: 11px; }
 .face-data { margin-top: 26px; }
 .form-actions { justify-content: flex-end; margin-top: 20px; }
-.inference-status { display: flex; align-items: center; justify-content: flex-end; gap: 7px; margin-top: 20px; color: var(--muted); font-size: 11px; }
-.inference-status svg { color: var(--accent); }
 .result-panel { margin-top: 18px; }
 .created-result { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(140px, 0.5fr) auto; align-items: center; gap: 20px; }
 .created-result span, .created-result strong { display: block; }

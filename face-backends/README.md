@@ -100,12 +100,6 @@ supported:
 Responses retain the original `{ code, message, data }` contract. Business
 errors return `code: 1` so the existing Axios interceptor can display them.
 
-The Vue client can also run SCRFD and ArcFace on-device. In that mode the API
-serves models from `/api/models/scrfd` and `/api/models/arcface`, accepts query
-embeddings at `/api/visual/search/embedding`, and accepts enrolled embeddings at
-`/api/visual/face/create_embedding`. The original cloud inference endpoints
-remain unchanged and fully supported.
-
 ## Verification
 
 ```sh

@@ -7,14 +7,14 @@
       :show-file-list="false"
       :before-upload="handleFile"
     >
-      <img v-if="previewUrl" :src="previewUrl" :alt="t('image.selectedAlt')" />
+      <img v-if="previewUrl" :src="previewUrl" alt="已选择图片" />
       <div v-else class="dropzone-empty">
         <ImagePlus :size="28" />
         <strong>{{ label }}</strong>
-        <span>{{ t('image.formats') }}</span>
+        <span>JPG、PNG 或 WebP，最大 10 MB</span>
       </div>
     </el-upload>
-    <el-tooltip v-if="previewUrl" :content="t('image.remove')" placement="left">
+    <el-tooltip v-if="previewUrl" content="移除图片" placement="left">
       <button class="dropzone-remove" type="button" @click.stop="clear">
         <Trash2 :size="16" />
       </button>
@@ -24,12 +24,10 @@
 
 <script setup>
 import { ImagePlus, Trash2 } from '@lucide/vue'
-import { useI18n } from 'vue-i18n'
 import { fileToImagePayload } from '@/utils/image'
 
-defineProps({ label: { type: String, default: '' }, previewUrl: { type: String, default: '' } })
+defineProps({ label: { type: String, default: '选择查询图片' }, previewUrl: { type: String, default: '' } })
 const emit = defineEmits(['update:modelValue', 'update:previewUrl'])
-const { t } = useI18n()
 
 async function handleFile(file) {
   try {

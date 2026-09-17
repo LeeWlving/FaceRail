@@ -16,14 +16,10 @@ Rails.application.routes.draw do
     get "visual/sample/list", to: "samples#index"
 
     post "visual/face/create", to: "faces#create"
-    post "visual/face/create_embedding", to: "faces#create_embedding"
     get "visual/face/delete", to: "faces#destroy"
 
     post "visual/search/do", to: "searches#create"
-    post "visual/search/embedding", to: "searches#create_embedding"
     post "visual/compare/do", to: "comparisons#create"
-
-    get "models/:id", to: "models#show", constraints: { id: /(scrfd|arcface)/ }
   end
 
   scope module: :api do

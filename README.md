@@ -16,17 +16,17 @@ FaceRail 是一个可自行部署的人脸数据管理与向量检索系统。�
 - 对两张图片执行 1:1 人脸比对
 - 查看 embedding 的等待、处理中、可搜索和失败状态
 - 使用 Active Storage 管理原图与人脸裁剪图
-- 中英文界面即时切换
-- 在设备端与云端推理之间切换，默认使用设备端
 
 ## 系统架构
 
 ```text
-Browser (default: on-device SCRFD + ArcFace)
-  |                    |
-  | embeddings         | cloud mode: images
-  v                    v
-Vue 3 + Vite ------> Ruby on Rails API
+Browser
+  |
+  v
+Vue 3 + Vite + Nginx
+  |
+  v
+Ruby on Rails API
   |--------------------------|
   v                          v
 Active Storage          Solid Queue worker
@@ -43,19 +43,18 @@ Active Storage          Solid Queue worker
                              v
                   PostgreSQL 17 + pgvector
 
-Device: query image -> browser SCRFD -> browser ArcFace -> embedding -> pgvector -> Top 20
-Cloud:  query image -> Rails SCRFD -> Rails ArcFace -> embedding -> pgvector -> Top 20
+Query image -> SCRFD -> ArcFace -> cosine similarity -> Top 20 faces
 ```
 
 ## 技术栈
 
 | 层级 | 技术 |
 | --- | --- |
-| 前端 | Vue 3、Vite、Vue Router、Vue I18n、Element Plus、Axios |
+| 前端 | Vue 3、Vite、Vue Router、Element Plus、Axios |
 | API | Ruby 4、Rails 8 API mode |
 | 数据库 | PostgreSQL 17、pgvector、HNSW cosine index |
 | 图片 | Active Storage、ruby-vips |
-| 推理 | ONNX Runtime Web / Ruby、SCRFD、ArcFace |
+| 推理 | ONNX Runtime、SCRFD、ArcFace |
 | 异步任务 | Active Job、Solid Queue |
 | 发布 | Docker、Nginx、GitHub Actions、GHCR |
 
@@ -146,17 +145,6 @@ npm run dev
 
 Vite 会将 `/api` 请求代理到本地 Rails 服务。通过 `VITE_API_BASE_URL` 可以覆盖 API 根路径。
 
-### 推理模式与隐私
-
-控制台右上角可以在“设备端”和“云端”之间切换，选择会保存在浏览器中，默认是设备端：
-
-- **设备端搜索**：浏览器运行 SCRFD 和 ArcFace，只将 512 维向量、人脸位置和质量分发送给 Rails；查询原图不离开设备。
-- **设备端比对**：检测、向量提取和相似度计算全部在浏览器完成，不上传图片或向量。
-- **设备端录入**：浏览器生成向量；仅当集合启用“保留人脸图片”时上传 112×112 对齐人脸图，原始图片不上传。
-- **云端模式**：完整保留原有搜索、比对和录入流程，图片由 Rails、ruby-vips 和 ONNX Runtime 处理，录入任务通过 Solid Queue 异步执行。
-
-设备端首次使用时会从 Rails 下载 SCRFD 和 ArcFace 模型，后续由浏览器缓存复用。界面支持中文和英文即时切换。
-
 ## API
 
 所有响应都使用兼容格式：
@@ -177,10 +165,7 @@ Vite 会将 `/api` 请求代理到本地 Rails 服务。通过 `VITE_API_BASE_UR
 | 样本管理 | GET/POST | `/api/visual/sample/*` |
 | 人脸管理 | GET/POST | `/api/visual/face/*` |
 | M:N 搜索 | POST | `/api/visual/search/do` |
-| embedding 搜索 | POST | `/api/visual/search/embedding` |
 | 1:1 比对 | POST | `/api/visual/compare/do` |
-| embedding 录入 | POST | `/api/visual/face/create_embedding` |
-| 浏览器模型 | GET | `/api/models/scrfd`、`/api/models/arcface` |
 
 完整接口契约见 [`face-frontends/docs/2.1.0.md`](face-frontends/docs/2.1.0.md)。服务同时保留不带 `/api` 前缀的 `/visual/...` 兼容路径。
 
