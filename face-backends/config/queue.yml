@@ -3,7 +3,11 @@ default: &default
     - polling_interval: 1
       batch_size: 500
   workers:
-    - queues: [embeddings, default]
+    - queues: [embeddings]
+      threads: <%= ENV.fetch("EMBEDDING_JOB_THREADS", 1) %>
+      processes: <%= ENV.fetch("EMBEDDING_JOB_CONCURRENCY", 1) %>
+      polling_interval: 1
+    - queues: [default]
       threads: <%= ENV.fetch("JOB_THREADS", 3) %>
       processes: <%= ENV.fetch("JOB_CONCURRENCY", 1) %>
       polling_interval: 1

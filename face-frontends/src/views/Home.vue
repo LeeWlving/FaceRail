@@ -107,7 +107,6 @@ const navigation = [
       { to: '/samples', label: '样本列表', icon: Users },
       { to: '/samples/create', label: '创建样本', icon: UserRoundPlus },
       { to: '/samples/view', label: '查看样本', icon: ListFilter },
-      { to: '/faces/create', label: '录入人脸', icon: ScanFace },
     ],
   },
 ]

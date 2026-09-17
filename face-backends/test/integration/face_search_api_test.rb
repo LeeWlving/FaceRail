@@ -71,14 +71,8 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
 
   test "face creation, search, compare and cascading deletion" do
     post "/api/visual/collect/create", params: @collection, as: :json
-    create_sample
-
-    post "/api/visual/face/create", params: sample_identity.merge(
-      imageBase64: encoded("face-a"),
-      faceData: [{ key: "camera", value: "lobby" }]
-    ), as: :json
-    assert_success
-    face_id = response_data.fetch("faceId")
+    created_face = create_sample(image: "face-a", face_data: [{ key: "camera", value: "lobby" }])
+    face_id = created_face.fetch("faceId")
     assert_equal "pending", response_data.fetch("embeddingStatus")
 
     face_record = FaceRecord.find_by!(face_key: face_id)
@@ -124,10 +118,7 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
 
   test "embedding failures are recorded for asynchronous face creation" do
     post "/api/visual/collect/create", params: @collection, as: :json
-    create_sample
-
-    post "/api/visual/face/create", params: sample_identity.merge(imageBase64: encoded("no-face")), as: :json
-    assert_success
+    create_sample(image: "no-face")
 
     face_record = FaceRecord.find_by!(face_key: response_data.fetch("faceId"))
     GenerateFaceEmbeddingJob.perform_now(face_record)
@@ -140,14 +131,18 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
 
   private
 
-  def create_sample
-    post "/api/visual/sample/create", params: sample_identity.merge(
+  def create_sample(image: nil, face_data: nil)
+    payload = sample_identity.merge(
       sampleData: [
         { key: "display_name", value: "Alice" },
         { key: "department", value: "Engineering" }
       ]
-    ), as: :json
-    assert_success(true)
+    )
+    payload[:imageBase64] = encoded(image) if image
+    payload[:faceData] = face_data if face_data
+    post "/api/visual/sample/create", params: payload, as: :json
+    assert_success(image ? nil : true)
+    response_data
   end
 
   def sample_identity

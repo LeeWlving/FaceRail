@@ -1,6 +1,6 @@
 <template>
   <PageHeader title="查看样本" description="更新样本扩展数据，并管理该样本下的人脸记录。">
-    <el-button v-if="sample" type="primary" @click="openFaceCreate"><ScanFace :size="16" />录入人脸</el-button>
+    <el-button v-if="sample" type="primary" @click="openFaceCreate"><ScanFace :size="16" />添加人脸</el-button>
   </PageHeader>
 
   <form class="query-bar" @submit.prevent="load">
@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Save, ScanFace, Search, Trash2, Users } from '@lucide/vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -46,6 +46,7 @@ const query = reactive({ namespace: String(route.query.namespace || ''), collect
 const sample = ref(null)
 const loading = ref(false)
 const saving = ref(false)
+let pollTimer
 const aggregateStatus = computed(() => {
   const statuses = sample.value?.faces?.map((face) => face.embeddingStatus) || []
   if (statuses.includes('failed')) return 'failed'
@@ -54,19 +55,26 @@ const aggregateStatus = computed(() => {
   return statuses.length ? 'ready' : 'pending'
 })
 
-async function load() {
+function schedulePoll() {
+  clearTimeout(pollTimer)
+  const active = sample.value?.faces?.some((face) => ['pending', 'processing'].includes(face.embeddingStatus))
+  if (active) pollTimer = setTimeout(() => fetchSample(false), 1500)
+}
+async function fetchSample(showLoading = true) {
   if (!query.namespace || !query.collectionName || !query.sampleId) {
     ElMessage.warning('请输入完整的样本标识')
     return
   }
-  loading.value = true
+  if (showLoading) loading.value = true
   try {
     sample.value = await sampleApi.view(query)
     router.replace({ query: { ...query } })
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
+    schedulePoll()
   }
 }
+function load() { fetchSample() }
 async function save() {
   await formRef.value.validate()
   saving.value = true
@@ -86,6 +94,7 @@ async function removeFace(face) {
 function openFaceCreate() { router.push({ path: '/faces/create', query: { ...query } }) }
 
 if (query.namespace && query.collectionName && query.sampleId) load()
+onBeforeUnmount(() => clearTimeout(pollTimer))
 </script>
 
 <style scoped>

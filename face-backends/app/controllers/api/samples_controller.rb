@@ -1,11 +1,15 @@
 module Api
   class SamplesController < BaseController
     def create
-      sample_collection.face_samples.create!(
-        sample_key: sample_params.require(:sampleId),
-        metadata: normalized_metadata
-      )
-      render_success(true)
+      face = nil
+      FaceSample.transaction do
+        sample_collection.face_samples.create!(
+          sample_key: sample_params.require(:sampleId),
+          metadata: normalized_metadata
+        )
+        face = FaceSearch::CreateFace.new(sample_params).call if sample_params[:imageBase64].present?
+      end
+      render_success(face || true)
     end
 
     def update
@@ -36,7 +40,12 @@ module Api
     private
 
     def sample_params
-      params.permit(:namespace, :collectionName, :sampleId, sampleData: %i[key value])
+      params.permit(
+        :namespace, :collectionName, :sampleId, :imageBase64,
+        :faceScoreThreshold, :minConfidenceThresholdWithThisSample,
+        :maxConfidenceThresholdWithOtherSample,
+        sampleData: %i[key value], faceData: %i[key value]
+      )
     end
 
     def sample_collection
