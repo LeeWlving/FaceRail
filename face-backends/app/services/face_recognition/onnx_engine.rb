@@ -10,6 +10,7 @@ module FaceRecognition
     DEFAULT_IOU_THRESHOLD = 0.7
     MAX_IMAGE_SIZE = 640
     ALIGNED_FACE_SIZE = 112
+    FALLBACK_BORDER_RATIO = 0.35
     ARCFACE_LANDMARKS = [
       [38.2946, 51.6963],
       [73.5318, 51.5014],
@@ -28,11 +29,9 @@ module FaceRecognition
 
     def extract(image_base64, score_threshold: 0, limit: 5)
       image = decode_image(image_base64)
-      prepared, scale = prepare_detection_image(image)
-      output = detector.predict({ detector_input_name => tensor_for(prepared) })
       threshold = score_threshold.to_f.positive? ? score_threshold.to_f / 100.0 : DEFAULT_SCORE_THRESHOLD
 
-      detect_faces(output, prepared.width, scale, threshold)
+      detect_with_fallback(image, threshold)
         .first([limit.to_i, 1].max)
         .map { |face| recognize(image, face) }
     rescue Vips::Error, ArgumentError => e
@@ -80,6 +79,39 @@ module FaceRecognition
 
       ratio = MAX_IMAGE_SIZE.to_f / longest
       [image.resize(ratio), 1.0 / ratio]
+    end
+
+    def detect(image, threshold)
+      prepared, scale = prepare_detection_image(image)
+      output = detector.predict({ detector_input_name => tensor_for(prepared) })
+      detect_faces(output, prepared.width, scale, threshold)
+    end
+
+    def detect_with_fallback(image, threshold)
+      faces = detect(image, threshold)
+      return faces if faces.any?
+
+      border_x = (image.width * FALLBACK_BORDER_RATIO).round
+      border_y = (image.height * FALLBACK_BORDER_RATIO).round
+      padded = image.embed(
+        border_x,
+        border_y,
+        image.width + (border_x * 2),
+        image.height + (border_y * 2),
+        extend: :background,
+        background: [0, 0, 0]
+      )
+
+      detect(padded, threshold).map { |face| translate_face(face, -border_x, -border_y) }
+    end
+
+    def translate_face(face, offset_x, offset_y)
+      location = face[:location].merge(
+        x: face.dig(:location, :x) + offset_x,
+        y: face.dig(:location, :y) + offset_y
+      )
+      points = face[:points].map { |x, y| [x + offset_x, y + offset_y] }
+      face.merge(location: location, points: points)
     end
 
     def tensor_for(image)

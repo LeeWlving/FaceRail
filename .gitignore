@@ -1,6 +1,10 @@
 # Local upstream reference project
 /face-search/
 
+# Local face-detection regression images.
+/1004.jpg
+/1027.jpg
+
 # Local deployment configuration.
 /.env
 
