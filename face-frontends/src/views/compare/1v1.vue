@@ -1,30 +1,30 @@
 <template>
-  <PageHeader title="人脸比对" description="分别提取两张图片的人脸向量，返回相似度置信分和欧氏距离。" />
+  <PageHeader :title="t('compare.title')" :description="t('compare.description')" />
   <section class="workspace-panel">
-    <div class="panel-heading"><h2>比对图片</h2><ScanFace :size="18" /></div>
+    <div class="panel-heading"><h2>{{ t('compare.images') }}</h2><ScanFace :size="18" /></div>
     <div class="panel-body">
       <div class="compare-images">
-        <div><span class="image-label">图片 A</span><ImageDropzone v-model="form.imageBase64A" v-model:preview-url="previewA" label="选择第一张图片" /></div>
-        <div><span class="image-label">图片 B</span><ImageDropzone v-model="form.imageBase64B" v-model:preview-url="previewB" label="选择第二张图片" /></div>
+        <div><span class="image-label">{{ t('compare.imageA') }}</span><ImageDropzone v-model="form.imageBase64A" v-model:preview-url="previewA" :label="t('image.chooseFirst')" /></div>
+        <div><span class="image-label">{{ t('compare.imageB') }}</span><ImageDropzone v-model="form.imageBase64B" v-model:preview-url="previewB" :label="t('image.chooseSecond')" /></div>
       </div>
       <div class="compare-controls">
-        <div class="threshold-control"><span>人脸质量阈值 {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
-        <el-checkbox v-model="form.needFaceInfo">返回人脸位置与质量分</el-checkbox>
-        <el-button type="primary" :loading="loading" @click="submit"><GitCompareArrows :size="17" />开始比对</el-button>
+        <div class="threshold-control"><span>{{ t('compare.threshold', { value: form.faceScoreThreshold }) }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
+        <el-checkbox v-model="form.needFaceInfo">{{ t('compare.faceInfo') }}</el-checkbox>
+        <el-button type="primary" :loading="loading" @click="submit"><GitCompareArrows :size="17" />{{ t('compare.start') }}</el-button>
       </div>
     </div>
   </section>
 
   <section v-if="result" class="workspace-panel compare-result">
-    <div class="panel-heading"><h2>比对结果</h2><span class="result-grade">{{ grade }}</span></div>
+    <div class="panel-heading"><h2>{{ t('compare.result') }}</h2><span class="result-grade">{{ grade }}</span></div>
     <div class="panel-body">
       <div class="metrics">
-        <div><span>相似度置信分</span><strong>{{ format(result.confidence) }}</strong><small>-100 至 100，越高越相似</small></div>
-        <div><span>向量欧氏距离</span><strong>{{ format(result.distance, 4) }}</strong><small>距离越小越相似</small></div>
+        <div><span>{{ t('compare.confidence') }}</span><strong>{{ format(result.confidence) }}</strong><small>{{ t('compare.confidenceHint') }}</small></div>
+        <div><span>{{ t('compare.distance') }}</span><strong>{{ format(result.distance, 4) }}</strong><small>{{ t('compare.distanceHint') }}</small></div>
       </div>
       <div v-if="result.faceInfo" class="face-previews">
-        <div><FaceOverlay :image-url="previewA" :boxes="[{ ...result.faceInfo.locationA, label: `质量分 ${format(result.faceInfo.faceScoreA)}` }]" /></div>
-        <div><FaceOverlay :image-url="previewB" :boxes="[{ ...result.faceInfo.locationB, label: `质量分 ${format(result.faceInfo.faceScoreB)}` }]" /></div>
+        <div><FaceOverlay :image-url="previewA" :boxes="[{ ...result.faceInfo.locationA, label: `${t('common.quality')} ${format(result.faceInfo.faceScoreA)}` }]" /></div>
+        <div><FaceOverlay :image-url="previewB" :boxes="[{ ...result.faceInfo.locationB, label: `${t('common.quality')} ${format(result.faceInfo.faceScoreB)}` }]" /></div>
       </div>
     </div>
   </section>
@@ -33,11 +33,16 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { GitCompareArrows, ScanFace } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 import PageHeader from '@/components/PageHeader.vue'
 import FaceOverlay from '@/components/FaceOverlay.vue'
 import ImageDropzone from '@/components/ImageDropzone.vue'
 import * as compareApi from '@/api/compare'
+import { usePreferences } from '@/composables/usePreferences'
+import { compareEmbeddings, extractFaces } from '@/ml/faceEngine'
 
+const { t } = useI18n()
+const { inferenceMode } = usePreferences()
 const previewA = ref('')
 const previewB = ref('')
 const loading = ref(false)
@@ -45,21 +50,32 @@ const result = ref(null)
 const form = reactive({ imageBase64A: '', imageBase64B: '', faceScoreThreshold: 0, needFaceInfo: true })
 const grade = computed(() => {
   if (!result.value) return ''
-  if (result.value.confidence >= 80) return '高度相似'
-  if (result.value.confidence >= 50) return '可能相似'
-  return '相似度较低'
+  if (result.value.confidence >= 80) return t('compare.high')
+  if (result.value.confidence >= 50) return t('compare.possible')
+  return t('compare.low')
 })
 
 function format(value, digits = 2) { return Number(value || 0).toFixed(digits) }
 async function submit() {
   if (!form.imageBase64A || !form.imageBase64B) {
-    ElMessage.warning('请选择两张待比对图片')
+    ElMessage.warning(t('validation.twoImages'))
     return
   }
   loading.value = true
   result.value = null
   try {
-    result.value = await compareApi.compare(form)
+    if (inferenceMode.value === 'cloud') {
+      result.value = await compareApi.compare(form)
+    } else {
+      const [leftFaces, rightFaces] = await Promise.all([
+        extractFaces(previewA.value, { scoreThreshold: form.faceScoreThreshold, limit: 1 }),
+        extractFaces(previewB.value, { scoreThreshold: form.faceScoreThreshold, limit: 1 }),
+      ])
+      if (!leftFaces[0] || !rightFaces[0]) throw Object.assign(new Error(t('ml.noFace')), { code: 'ml.noFace' })
+      result.value = compareEmbeddings(leftFaces[0], rightFaces[0], form.needFaceInfo)
+    }
+  } catch (error) {
+    if (error.code?.startsWith('ml.')) ElMessage.error(t(error.code))
   } finally {
     loading.value = false
   }

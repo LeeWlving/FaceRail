@@ -9,8 +9,10 @@ FaceRail 的 Vue 3 管理控制台，用于集合、样本和人脸数据管理�
 - Vue 3
 - Vite
 - Vue Router
+- Vue I18n
 - Element Plus
 - Axios
+- ONNX Runtime Web
 - Lucide Icons
 - Playwright
 
@@ -37,7 +39,9 @@ VITE_API_BASE_URL=http://127.0.0.1:8080 npm run dev
 | `/compare` | 1:1 人脸比对 |
 | `/collections` | 集合管理 |
 | `/samples` | 样本与 embedding 状态管理 |
-| `/faces/create` | 异步录入人脸 |
+| `/faces/create` | 设备端或云端录入人脸 |
+
+右上角可以切换中文/英文和设备端/云端推理。默认设备端运行 SCRFD 与 ArcFace；云端模式保持 Rails API 的完整搜索、比对和异步录入能力。
 
 ## 检查与构建
 

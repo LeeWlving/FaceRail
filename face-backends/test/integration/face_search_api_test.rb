@@ -129,6 +129,35 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
     assert_nil face_record.embedding
   end
 
+  test "device embeddings can be enrolled and searched without uploading the source image" do
+    post "/api/visual/collect/create", params: @collection, as: :json
+    create_sample
+    vector = [1.0, 0.0] + Array.new(510, 0.0)
+
+    post "/api/visual/face/create_embedding", params: sample_identity.merge(
+      embedding: vector,
+      faceScore: 97.2,
+      location: { x: 12, y: 18, w: 76, h: 88 },
+      faceImageBase64: "data:image/jpeg;base64,#{encoded("cropped-image")}",
+      faceData: [{ key: "camera", value: "device" }]
+    ), as: :json
+    assert_success
+    assert_equal "ready", response_data.fetch("embeddingStatus")
+
+    face_record = FaceRecord.find_by!(face_key: response_data.fetch("faceId"))
+    assert_not face_record.source_image.attached?
+    assert face_record.face_image.attached?
+
+    post "/api/visual/search/embedding", params: @collection.slice(:namespace, :collectionName).merge(
+      confidenceThreshold: 0,
+      limit: 20,
+      faces: [{ embedding: vector, faceScore: 99.0, location: { x: 1, y: 2, w: 3, h: 4 } }]
+    ), as: :json
+    assert_success
+    assert_equal "alice", response_data.first.fetch("match").first.fetch("sampleId")
+    assert_equal 100.0, response_data.first.fetch("match").first.fetch("confidence")
+  end
+
   private
 
   def create_sample

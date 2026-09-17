@@ -1,17 +1,17 @@
 <template>
-  <PageHeader title="删除集合" description="删除集合会一并移除其中的样本、人脸和图片，此操作不可恢复。" />
+  <PageHeader :title="t('collection.titleRemove')" :description="t('collection.descRemove')" />
   <section class="workspace-panel danger-panel">
-    <div class="panel-heading"><h2>危险操作</h2><TriangleAlert :size="18" /></div>
+    <div class="panel-heading"><h2>{{ t('common.dangerAction') }}</h2><TriangleAlert :size="18" /></div>
     <div class="panel-body">
-      <el-alert title="请确认当前集合已不再使用" type="error" :closable="false" show-icon />
+      <el-alert :title="t('collection.confirmUnused')" type="error" :closable="false" show-icon />
       <el-form label-position="top" class="remove-form">
         <div class="form-grid">
-          <el-form-item label="命名空间"><el-input v-model="form.namespace" /></el-form-item>
-          <el-form-item label="集合名称"><el-input v-model="form.collectionName" /></el-form-item>
+          <el-form-item :label="t('common.namespace')"><el-input v-model="form.namespace" /></el-form-item>
+          <el-form-item :label="t('common.collectionName')"><el-input v-model="form.collectionName" /></el-form-item>
         </div>
       </el-form>
       <div class="form-actions">
-        <el-button type="danger" :loading="removing" @click="submit"><Trash2 :size="16" />永久删除</el-button>
+        <el-button type="danger" :loading="removing" @click="submit"><Trash2 :size="16" />{{ t('common.permanentDelete') }}</el-button>
       </div>
     </div>
   </section>
@@ -21,24 +21,26 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trash2, TriangleAlert } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 import PageHeader from '@/components/PageHeader.vue'
 import * as collectApi from '@/api/collect'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const removing = ref(false)
 const form = reactive({ namespace: String(route.query.namespace || ''), collectionName: String(route.query.collectionName || '') })
 
 async function submit() {
   if (!form.namespace || !form.collectionName) {
-    ElMessage.warning('请输入命名空间和集合名称')
+    ElMessage.warning(t('common.inputNamespaceCollection'))
     return
   }
-  await ElMessageBox.confirm(`确认删除集合 ${form.namespace}/${form.collectionName}？`, '删除集合', { type: 'error', confirmButtonText: '确认删除', cancelButtonText: '取消' })
+  await ElMessageBox.confirm(t('collection.confirm', { name: `${form.namespace}/${form.collectionName}` }), t('collection.confirmTitle'), { type: 'error', confirmButtonText: t('collection.confirmButton'), cancelButtonText: t('common.cancel') })
   removing.value = true
   try {
     await collectApi.remove(form)
-    ElMessage.success('集合已删除')
+    ElMessage.success(t('collection.removed'))
     router.push({ path: '/collections', query: { namespace: form.namespace } })
   } finally {
     removing.value = false
