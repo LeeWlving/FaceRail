@@ -9,12 +9,18 @@
           <div class="form-grid">
             <el-form-item label="命名空间"><el-input v-model="form.namespace" /></el-form-item>
             <el-form-item label="集合名称"><el-input v-model="form.collectionName" /></el-form-item>
-            <el-form-item label="返回数量"><el-input-number v-model="form.limit" :min="1" :max="100" /></el-form-item>
-            <el-form-item label="最多检测人脸"><el-input-number v-model="form.maxFaceNum" :min="1" :max="20" /></el-form-item>
           </div>
         </el-form>
-        <div class="compact-slider"><span>最低匹配分 {{ form.confidenceThreshold }}</span><el-slider v-model="form.confidenceThreshold" :min="-100" :max="100" /></div>
-        <div class="compact-slider"><span>人脸质量阈值 {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
+        <el-collapse v-model="advancedSections" class="advanced-options">
+          <el-collapse-item title="高级参数" name="recognition">
+            <div class="form-grid">
+              <el-form-item label="返回数量"><el-input-number v-model="form.limit" :min="1" :max="100" /></el-form-item>
+              <el-form-item label="最多检测人脸"><el-input-number v-model="form.maxFaceNum" :min="1" :max="20" /></el-form-item>
+            </div>
+            <div class="compact-slider"><span>最低匹配分 {{ form.confidenceThreshold }}</span><el-slider v-model="form.confidenceThreshold" :min="-100" :max="100" /></div>
+            <div class="compact-slider"><span>人脸质量阈值 {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
+          </el-collapse-item>
+        </el-collapse>
         <el-button class="search-button" type="primary" :loading="loading" @click="submit"><ScanSearch :size="17" />开始搜索</el-button>
       </div>
     </section>
@@ -55,6 +61,7 @@ import * as searchApi from '@/api/search'
 const previewUrl = ref('')
 const loading = ref(false)
 const results = ref([])
+const advancedSections = ref([])
 const form = reactive({ namespace: '', collectionName: '', imageBase64: '', confidenceThreshold: 0, faceScoreThreshold: 0, limit: 20, maxFaceNum: 5 })
 const boxes = computed(() => results.value.map((face, index) => ({
   ...face.location,
@@ -76,7 +83,16 @@ async function submit() {
   loading.value = true
   results.value = []
   try {
-    results.value = await searchApi.search(form)
+    const payload = { namespace: form.namespace, collectionName: form.collectionName, imageBase64: form.imageBase64 }
+    if (advancedSections.value.includes('recognition')) {
+      Object.assign(payload, {
+        confidenceThreshold: form.confidenceThreshold,
+        faceScoreThreshold: form.faceScoreThreshold,
+        limit: form.limit,
+        maxFaceNum: form.maxFaceNum,
+      })
+    }
+    results.value = await searchApi.search(payload)
   } finally {
     loading.value = false
   }
@@ -87,7 +103,11 @@ async function submit() {
 .search-layout { display: grid; grid-template-columns: minmax(330px, 390px) minmax(0, 1fr); gap: 18px; align-items: start; }
 .control-panel { position: sticky; top: 80px; }
 .search-form { margin-top: 18px; }
-.search-form :deep(.el-input-number) { width: 100%; }
+.search-form :deep(.el-input-number), .advanced-options :deep(.el-input-number) { width: 100%; }
+.advanced-options { margin-top: 4px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.advanced-options :deep(.el-collapse-item__header) { height: 42px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.advanced-options :deep(.el-collapse-item__wrap) { border-bottom: 0; }
+.advanced-options :deep(.el-collapse-item__content) { padding-bottom: 14px; }
 .compact-slider + .compact-slider { margin-top: 14px; }
 .compact-slider span { display: block; margin-bottom: 2px; color: #4e5b57; font-size: 11px; font-weight: 600; }
 .search-button { width: 100%; margin-top: 16px; }

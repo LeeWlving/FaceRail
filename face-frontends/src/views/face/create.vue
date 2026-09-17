@@ -16,21 +16,25 @@
     </section>
 
     <section class="workspace-panel">
-      <div class="panel-heading"><h2>识别参数</h2><SlidersHorizontal :size="18" /></div>
+      <div class="panel-heading"><h2>人脸数据</h2><SlidersHorizontal :size="18" /></div>
       <div class="panel-body">
-        <div class="slider-field">
-          <div><strong>人脸质量阈值</strong><span>0 使用模型默认值</span></div>
-          <el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" show-input />
-        </div>
-        <div class="slider-field">
-          <div><strong>同样本最低相似度</strong><span>0 表示不检查类内相似度</span></div>
-          <el-slider v-model="form.minConfidenceThresholdWithThisSample" :min="0" :max="100" show-input />
-        </div>
-        <div class="slider-field">
-          <div><strong>异样本最高相似度</strong><span>0 表示不检查类间冲突</span></div>
-          <el-slider v-model="form.maxConfidenceThresholdWithOtherSample" :min="0" :max="100" show-input />
-        </div>
-        <div class="face-data"><FieldEditor v-model="form.faceData" mode="values" /></div>
+        <FieldEditor v-model="form.faceData" mode="values" />
+        <el-collapse v-model="advancedSections" class="advanced-options">
+          <el-collapse-item title="高级参数" name="recognition">
+            <div class="slider-field">
+              <div><strong>人脸质量阈值</strong><span>模型默认</span></div>
+              <el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" show-input />
+            </div>
+            <div class="slider-field">
+              <div><strong>同样本最低相似度</strong><span>默认关闭</span></div>
+              <el-slider v-model="form.minConfidenceThresholdWithThisSample" :min="0" :max="100" show-input />
+            </div>
+            <div class="slider-field">
+              <div><strong>异样本最高相似度</strong><span>默认关闭</span></div>
+              <el-slider v-model="form.maxConfidenceThresholdWithOtherSample" :min="0" :max="100" show-input />
+            </div>
+          </el-collapse-item>
+        </el-collapse>
         <div class="form-actions"><el-button type="primary" :loading="saving" @click="submit"><Upload :size="16" />提交处理</el-button></div>
       </div>
     </section>
@@ -62,6 +66,7 @@ const formRef = ref()
 const saving = ref(false)
 const previewUrl = ref('')
 const createdFace = ref(null)
+const advancedSections = ref([])
 const form = reactive({
   namespace: String(route.query.namespace || ''),
   collectionName: String(route.query.collectionName || ''),
@@ -83,7 +88,21 @@ async function submit() {
   }
   saving.value = true
   try {
-    createdFace.value = await faceApi.create(form)
+    const payload = {
+      namespace: form.namespace,
+      collectionName: form.collectionName,
+      sampleId: form.sampleId,
+      imageBase64: form.imageBase64,
+      faceData: form.faceData,
+    }
+    if (advancedSections.value.includes('recognition')) {
+      Object.assign(payload, {
+        faceScoreThreshold: form.faceScoreThreshold,
+        minConfidenceThresholdWithThisSample: form.minConfidenceThresholdWithThisSample,
+        maxConfidenceThresholdWithOtherSample: form.maxConfidenceThresholdWithOtherSample,
+      })
+    }
+    createdFace.value = await faceApi.create(payload)
     ElMessage.success('人脸已提交，正在后台生成向量')
   } finally {
     saving.value = false
@@ -98,11 +117,14 @@ function openSample() {
 .face-create-layout { display: grid; grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr); gap: 18px; align-items: start; }
 .identity-form { margin-top: 20px; }
 .identity-form .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.advanced-options { margin-top: 22px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.advanced-options :deep(.el-collapse-item__header) { height: 42px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.advanced-options :deep(.el-collapse-item__wrap) { border-bottom: 0; }
+.advanced-options :deep(.el-collapse-item__content) { padding-bottom: 18px; }
 .slider-field + .slider-field { margin-top: 22px; }
 .slider-field > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .slider-field strong { font-size: 12px; }
 .slider-field span { color: var(--muted); font-size: 11px; }
-.face-data { margin-top: 26px; }
 .form-actions { justify-content: flex-end; margin-top: 20px; }
 .result-panel { margin-top: 18px; }
 .created-result { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(140px, 0.5fr) auto; align-items: center; gap: 20px; }

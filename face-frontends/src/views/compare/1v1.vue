@@ -8,8 +8,12 @@
         <div><span class="image-label">图片 B</span><ImageDropzone v-model="form.imageBase64B" v-model:preview-url="previewB" label="选择第二张图片" /></div>
       </div>
       <div class="compare-controls">
-        <div class="threshold-control"><span>人脸质量阈值 {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
-        <el-checkbox v-model="form.needFaceInfo">返回人脸位置与质量分</el-checkbox>
+        <el-collapse v-model="advancedSections" class="advanced-options">
+          <el-collapse-item title="高级参数" name="recognition">
+            <div class="threshold-control"><span>人脸质量阈值 {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
+            <el-checkbox v-model="form.needFaceInfo">返回人脸位置与质量分</el-checkbox>
+          </el-collapse-item>
+        </el-collapse>
         <el-button type="primary" :loading="loading" @click="submit"><GitCompareArrows :size="17" />开始比对</el-button>
       </div>
     </div>
@@ -42,6 +46,7 @@ const previewA = ref('')
 const previewB = ref('')
 const loading = ref(false)
 const result = ref(null)
+const advancedSections = ref([])
 const form = reactive({ imageBase64A: '', imageBase64B: '', faceScoreThreshold: 0, needFaceInfo: true })
 const grade = computed(() => {
   if (!result.value) return ''
@@ -59,7 +64,11 @@ async function submit() {
   loading.value = true
   result.value = null
   try {
-    result.value = await compareApi.compare(form)
+    const payload = { imageBase64A: form.imageBase64A, imageBase64B: form.imageBase64B }
+    if (advancedSections.value.includes('recognition')) {
+      Object.assign(payload, { faceScoreThreshold: form.faceScoreThreshold, needFaceInfo: form.needFaceInfo })
+    }
+    result.value = await compareApi.compare(payload)
   } finally {
     loading.value = false
   }
@@ -69,7 +78,11 @@ async function submit() {
 <style scoped>
 .compare-images { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .image-label { display: block; margin-bottom: 8px; color: #4e5b57; font-size: 12px; font-weight: 700; }
-.compare-controls { display: grid; grid-template-columns: minmax(260px, 1fr) auto auto; align-items: end; gap: 24px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.compare-controls { display: grid; grid-template-columns: minmax(260px, 1fr) auto; align-items: end; gap: 24px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.advanced-options { border-top: 0; border-bottom: 0; }
+.advanced-options :deep(.el-collapse-item__header) { height: 34px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.advanced-options :deep(.el-collapse-item__wrap) { border-bottom: 0; }
+.advanced-options :deep(.el-collapse-item__content) { padding: 4px 0 0; }
 .threshold-control span { display: block; margin-bottom: 4px; color: #4e5b57; font-size: 11px; font-weight: 600; }
 .compare-result { margin-top: 18px; }
 .result-grade { color: var(--accent); font-size: 12px; font-weight: 700; }

@@ -3,7 +3,14 @@ require "base64"
 
 class FaceSearchApiTest < ActionDispatch::IntegrationTest
   class FakeEngine
+    attr_reader :calls
+
+    def initialize
+      @calls = []
+    end
+
     def extract(image, score_threshold:, limit:)
+      @calls << { score_threshold: score_threshold, limit: limit }
       image = Base64.strict_decode64(image)
       return [] if image == "no-face"
 
@@ -19,7 +26,8 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
   end
 
   setup do
-    FaceRecognition.engine = FakeEngine.new
+    @engine = FakeEngine.new
+    FaceRecognition.engine = @engine
     @collection = {
       namespace: "people",
       collectionName: "employees",
@@ -81,15 +89,16 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
     assert face_record.face_image.attached?
 
     post "/api/visual/search/do", params: @collection.slice(:namespace, :collectionName).merge(
-      imageBase64: encoded("face-a"), limit: 20, maxFaceNum: 5, confidenceThreshold: 0
+      imageBase64: encoded("face-a")
     ), as: :json
     assert_success
+    assert_equal({ score_threshold: nil, limit: 5 }, @engine.calls.last)
     match = response_data.first.fetch("match").first
     assert_equal "alice", match.fetch("sampleId")
     assert_equal 100.0, match.fetch("confidence")
 
     post "/api/visual/compare/do", params: {
-      imageBase64A: encoded("face-a"), imageBase64B: encoded("face-b"), needFaceInfo: true
+      imageBase64A: encoded("face-a"), imageBase64B: encoded("face-b")
     }, as: :json
     assert_success
     assert response_data.fetch("confidence") > 90
