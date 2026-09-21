@@ -1,30 +1,30 @@
 <template>
   <div class="field-editor">
     <div class="field-toolbar">
-      <span>{{ mode === 'columns' ? '字段定义' : '扩展数据' }}</span>
-      <el-button size="small" @click="addRow"><Plus :size="15" />添加</el-button>
+      <span>{{ $t(mode === 'columns' ? '字段定义' : '扩展数据') }}</span>
+      <el-button size="small" @click="addRow"><Plus :size="15" />{{ $t('添加') }}</el-button>
     </div>
-    <el-table :data="modelValue" empty-text="暂无字段" size="small">
-      <el-table-column label="名称" min-width="150">
+    <el-table :data="modelValue" :empty-text="$t('暂无字段')" size="small">
+      <el-table-column :label="$t('名称')" min-width="150">
         <template #default="{ row, $index }">
-          <el-input :model-value="mode === 'columns' ? row.name : row.key" placeholder="字段名称" @update:model-value="updateRow($index, mode === 'columns' ? 'name' : 'key', $event)" />
+          <el-input :model-value="mode === 'columns' ? row.name : row.key" :placeholder="$t('字段名称')" @update:model-value="updateRow($index, mode === 'columns' ? 'name' : 'key', $event)" />
         </template>
       </el-table-column>
-      <el-table-column v-if="mode === 'columns'" label="类型" width="140">
+      <el-table-column v-if="mode === 'columns'" :label="$t('类型')" width="140">
         <template #default="{ row, $index }">
-          <el-select :model-value="row.dataType" placeholder="类型" @update:model-value="updateRow($index, 'dataType', $event)">
+          <el-select :model-value="row.dataType" :placeholder="$t('类型')" @update:model-value="updateRow($index, 'dataType', $event)">
             <el-option v-for="type in dataTypes" :key="type" :label="type" :value="type" />
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column :label="mode === 'columns' ? '描述' : '值'" min-width="180">
+      <el-table-column :label="$t(mode === 'columns' ? '描述' : '值')" min-width="180">
         <template #default="{ row, $index }">
-          <el-input :model-value="mode === 'columns' ? row.comment : row.value" :placeholder="mode === 'columns' ? '字段描述' : '字段值'" @update:model-value="updateRow($index, mode === 'columns' ? 'comment' : 'value', $event)" />
+          <el-input :model-value="mode === 'columns' ? row.comment : row.value" :placeholder="$t(mode === 'columns' ? '字段描述' : '字段值')" @update:model-value="updateRow($index, mode === 'columns' ? 'comment' : 'value', $event)" />
         </template>
       </el-table-column>
       <el-table-column width="52" align="right">
         <template #default="{ $index }">
-          <el-tooltip content="删除" placement="left">
+          <el-tooltip :content="$t('删除')" placement="left">
             <button class="row-delete" type="button" @click="removeRow($index)"><Trash2 :size="15" /></button>
           </el-tooltip>
         </template>

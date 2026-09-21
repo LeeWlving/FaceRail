@@ -1,43 +1,44 @@
 <template>
-  <PageHeader title="查看集合" description="查看集合配置及样本、人脸扩展字段。" />
+  <PageHeader :title="$t('查看集合')" :description="$t('查看集合配置及样本、人脸扩展字段。')" />
   <form class="query-bar" @submit.prevent="load">
-    <div class="query-field"><label for="namespace">命名空间</label><el-input id="namespace" v-model="query.namespace" /></div>
-    <div class="query-field"><label for="collectionName">集合名称</label><el-input id="collectionName" v-model="query.collectionName" /></div>
-    <el-button native-type="submit" type="primary" :loading="loading"><Search :size="16" />查询</el-button>
+    <div class="query-field"><label for="namespace">{{ $t('命名空间') }}</label><el-input id="namespace" v-model="query.namespace" /></div>
+    <div class="query-field"><label for="collectionName">{{ $t('集合名称') }}</label><el-input id="collectionName" v-model="query.collectionName" /></div>
+    <el-button native-type="submit" type="primary" :loading="loading"><Search :size="16" />{{ $t('查询') }}</el-button>
   </form>
 
   <section v-if="collection" class="workspace-panel">
     <div class="panel-heading">
       <h2><span class="mono">{{ collection.namespace }}/{{ collection.collectionName }}</span></h2>
-      <el-button @click="openSamples"><Users :size="16" />查看样本</el-button>
+      <el-button @click="openSamples"><Users :size="16" />{{ $t('查看样本') }}</el-button>
     </div>
     <div class="panel-body">
       <dl class="detail-grid">
-        <div><dt>集合描述</dt><dd>{{ collection.collectionComment || '未填写' }}</dd></div>
-        <div><dt>存储方式</dt><dd>{{ collection.storageEngine || 'ACTIVE_STORAGE' }}</dd></div>
-        <div><dt>保留人脸图片</dt><dd>{{ collection.storageFaceInfo ? '是' : '否' }}</dd></div>
-        <div><dt>分片 / 副本</dt><dd>{{ collection.shardsNum || 0 }} / {{ collection.replicasNum || 0 }}</dd></div>
+        <div><dt>{{ $t('集合描述') }}</dt><dd>{{ collection.collectionComment || $t('未填写') }}</dd></div>
+        <div><dt>{{ $t('存储方式') }}</dt><dd>{{ collection.storageEngine || 'ACTIVE_STORAGE' }}</dd></div>
+        <div><dt>{{ $t('保留人脸图片') }}</dt><dd>{{ $t(collection.storageFaceInfo ? '是' : '否') }}</dd></div>
+        <div><dt>{{ $t('分片 / 副本') }}</dt><dd>{{ collection.shardsNum || 0 }} / {{ collection.replicasNum || 0 }}</dd></div>
       </dl>
 
-      <h3>样本字段</h3>
-      <el-table :data="collection.sampleColumns || []" empty-text="未定义样本字段" size="small">
-        <el-table-column prop="name" label="名称" min-width="160" />
-        <el-table-column prop="dataType" label="类型" width="140" />
-        <el-table-column prop="comment" label="描述" min-width="220" />
+      <h3>{{ $t('样本字段') }}</h3>
+      <el-table :data="collection.sampleColumns || []" :empty-text="$t('未定义样本字段')" size="small">
+        <el-table-column prop="name" :label="$t('名称')" min-width="160" />
+        <el-table-column prop="dataType" :label="$t('类型')" width="140" />
+        <el-table-column prop="comment" :label="$t('描述')" min-width="220" />
       </el-table>
 
-      <h3>人脸字段</h3>
-      <el-table :data="collection.faceColumns || []" empty-text="未定义人脸字段" size="small">
-        <el-table-column prop="name" label="名称" min-width="160" />
-        <el-table-column prop="dataType" label="类型" width="140" />
-        <el-table-column prop="comment" label="描述" min-width="220" />
+      <h3>{{ $t('人脸字段') }}</h3>
+      <el-table :data="collection.faceColumns || []" :empty-text="$t('未定义人脸字段')" size="small">
+        <el-table-column prop="name" :label="$t('名称')" min-width="160" />
+        <el-table-column prop="dataType" :label="$t('类型')" width="140" />
+        <el-table-column prop="comment" :label="$t('描述')" min-width="220" />
       </el-table>
     </div>
   </section>
-  <div v-else class="empty-state"><div><Database :size="34" /><span>输入集合标识查看配置</span></div></div>
+  <div v-else class="empty-state"><div><Database :size="34" /><span>{{ $t('输入集合标识查看配置') }}</span></div></div>
 </template>
 
 <script setup>
+import { translate } from '@/i18n'
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Database, Search, Users } from '@lucide/vue'
@@ -52,7 +53,7 @@ const loading = ref(false)
 
 async function load() {
   if (!query.namespace || !query.collectionName) {
-    ElMessage.warning('请输入命名空间和集合名称')
+    ElMessage.warning(translate('请输入命名空间和集合名称'))
     return
   }
   loading.value = true

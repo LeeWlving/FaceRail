@@ -1,40 +1,41 @@
 <template>
-  <PageHeader title="人脸比对" description="分别提取两张图片的人脸向量，返回相似度置信分和欧氏距离。" />
+  <PageHeader :title="$t('人脸比对')" :description="$t('分别提取两张图片的人脸向量，返回相似度置信分和欧氏距离。')" />
   <section class="workspace-panel">
-    <div class="panel-heading"><h2>比对图片</h2><ScanFace :size="18" /></div>
+    <div class="panel-heading"><h2>{{ $t('比对图片') }}</h2><ScanFace :size="18" /></div>
     <div class="panel-body">
       <div class="compare-images">
-        <div><span class="image-label">图片 A</span><ImageDropzone v-model="form.imageBase64A" v-model:preview-url="previewA" label="选择第一张图片" /></div>
-        <div><span class="image-label">图片 B</span><ImageDropzone v-model="form.imageBase64B" v-model:preview-url="previewB" label="选择第二张图片" /></div>
+        <div><span class="image-label">{{ $t('图片 A') }}</span><ImageDropzone v-model="form.imageBase64A" v-model:preview-url="previewA" :label="$t('选择第一张图片')" /></div>
+        <div><span class="image-label">{{ $t('图片 B') }}</span><ImageDropzone v-model="form.imageBase64B" v-model:preview-url="previewB" :label="$t('选择第二张图片')" /></div>
       </div>
       <div class="compare-controls">
         <el-collapse v-model="advancedSections" class="advanced-options">
-          <el-collapse-item title="高级参数" name="recognition">
-            <div class="threshold-control"><span>人脸质量阈值 {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
-            <el-checkbox v-model="form.needFaceInfo">返回人脸位置与质量分</el-checkbox>
+          <el-collapse-item :title="$t('高级参数')" name="recognition">
+            <div class="threshold-control"><span>{{ $t('人脸质量阈值') }} {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
+            <el-checkbox v-model="form.needFaceInfo">{{ $t('返回人脸位置与质量分') }}</el-checkbox>
           </el-collapse-item>
         </el-collapse>
-        <el-button type="primary" :loading="loading" @click="submit"><GitCompareArrows :size="17" />开始比对</el-button>
+        <el-button type="primary" :loading="loading" @click="submit"><GitCompareArrows :size="17" />{{ $t('开始比对') }}</el-button>
       </div>
     </div>
   </section>
 
   <section v-if="result" class="workspace-panel compare-result">
-    <div class="panel-heading"><h2>比对结果</h2><span class="result-grade">{{ grade }}</span></div>
+    <div class="panel-heading"><h2>{{ $t('比对结果') }}</h2><span class="result-grade">{{ grade }}</span></div>
     <div class="panel-body">
       <div class="metrics">
-        <div><span>相似度置信分</span><strong>{{ format(result.confidence) }}</strong><small>-100 至 100，越高越相似</small></div>
-        <div><span>向量欧氏距离</span><strong>{{ format(result.distance, 4) }}</strong><small>距离越小越相似</small></div>
+        <div><span>{{ $t('相似度置信分') }}</span><strong>{{ format(result.confidence) }}</strong><small>{{ $t('-100 至 100，越高越相似') }}</small></div>
+        <div><span>{{ $t('向量欧氏距离') }}</span><strong>{{ format(result.distance, 4) }}</strong><small>{{ $t('距离越小越相似') }}</small></div>
       </div>
       <div v-if="result.faceInfo" class="face-previews">
-        <div><FaceOverlay :image-url="previewA" :boxes="[{ ...result.faceInfo.locationA, label: `质量分 ${format(result.faceInfo.faceScoreA)}` }]" /></div>
-        <div><FaceOverlay :image-url="previewB" :boxes="[{ ...result.faceInfo.locationB, label: `质量分 ${format(result.faceInfo.faceScoreB)}` }]" /></div>
+        <div><FaceOverlay :image-url="previewA" :boxes="[{ ...result.faceInfo.locationA, label: `${translate('质量分')} ${format(result.faceInfo.faceScoreA)}` }]" /></div>
+        <div><FaceOverlay :image-url="previewB" :boxes="[{ ...result.faceInfo.locationB, label: `${translate('质量分')} ${format(result.faceInfo.faceScoreB)}` }]" /></div>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
+import { translate } from '@/i18n'
 import { computed, reactive, ref } from 'vue'
 import { GitCompareArrows, ScanFace } from '@lucide/vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -50,15 +51,15 @@ const advancedSections = ref([])
 const form = reactive({ imageBase64A: '', imageBase64B: '', faceScoreThreshold: 0, needFaceInfo: true })
 const grade = computed(() => {
   if (!result.value) return ''
-  if (result.value.confidence >= 80) return '高度相似'
-  if (result.value.confidence >= 50) return '可能相似'
-  return '相似度较低'
+  if (result.value.confidence >= 80) return translate('高度相似')
+  if (result.value.confidence >= 50) return translate('可能相似')
+  return translate('相似度较低')
 })
 
 function format(value, digits = 2) { return Number(value || 0).toFixed(digits) }
 async function submit() {
   if (!form.imageBase64A || !form.imageBase64B) {
-    ElMessage.warning('请选择两张待比对图片')
+    ElMessage.warning(translate('请选择两张待比对图片'))
     return
   }
   loading.value = true

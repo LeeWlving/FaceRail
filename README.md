@@ -200,7 +200,17 @@ docker compose up -d
 docker compose ps
 ```
 
-默认入口为 `http://localhost`，API 也会映射到 `http://localhost:8080`。上传文件和 PostgreSQL 数据保存在命名卷中，模型以只读方式挂载。
+默认入口为 `http://localhost`，API 也会映射到 `http://localhost:8080`。上传文件通过 Active Storage 保存到 Cloudflare R2，PostgreSQL 数据保存在命名卷中，模型以只读方式挂载。请在 `.env` 中配置 R2 的访问密钥、存储桶及 S3 API 端点：
+
+```dotenv
+ACTIVE_STORAGE_SERVICE=r2
+R2_ACCESS_KEY_ID=your-access-key-id
+R2_SECRET_ACCESS_KEY=your-secret-access-key
+R2_BUCKET=facerail
+R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+```
+
+如需本地调试，可将 `ACTIVE_STORAGE_SERVICE` 设置为 `local`；测试环境始终使用临时磁盘，不会访问 R2。
 
 如 GHCR 包尚未设置为公开，需要先使用具有 `read:packages` 权限的令牌登录：
 
