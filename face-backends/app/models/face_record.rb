@@ -25,7 +25,17 @@ class FaceRecord < ApplicationRecord
       faceScore: score,
       embeddingStatus: embedding_status,
       embeddingError: embedding_error,
+      thumbnailUrl: thumbnail_path,
       faceData: MetadataFields.to_pairs(metadata)
     }
+  end
+
+  private
+
+  def thumbnail_path
+    attachment = face_image.attached? ? face_image : source_image
+    return unless attachment.attached?
+
+    Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true)
   end
 end

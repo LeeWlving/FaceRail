@@ -19,6 +19,7 @@ const en = {
   '字段定义': 'Field Definitions', '扩展数据': 'Custom Data', '添加': 'Add', '暂无字段': 'No fields', '名称': 'Name',
   '字段名称': 'Field name', '类型': 'Type', '描述': 'Description', '值': 'Value', '字段描述': 'Field description', '字段值': 'Field value', '删除': 'Delete',
   '已选择图片': 'Selected image', 'JPG、PNG 或 WebP，最大 10 MB': 'JPG, PNG, or WebP, up to 10 MB', '移除图片': 'Remove image',
+  '人脸图片': 'Face Image', '暂无图片': 'No image',
   '选择查询图片': 'Select query image', '人脸分析图片': 'Face analysis image', '样本 ID': 'Sample ID', '样本扩展数据': 'Sample Custom Data',
   '等待处理': 'Pending', '生成中': 'Processing', '可搜索': 'Searchable', '失败': 'Failed',
   '定义命名空间、数据结构和人脸图片留存策略。': 'Define the namespace, data schema, and face image retention policy.',

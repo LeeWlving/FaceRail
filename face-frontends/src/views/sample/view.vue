@@ -18,6 +18,7 @@
       <hr class="section-divider" />
       <div class="subheading"><h3>{{ $t('人脸记录') }}</h3><span>{{ sample.faces?.length || 0 }} {{ $t('条') }}</span></div>
       <el-table :data="sample.faces || []" :empty-text="$t('尚未录入人脸')" size="small">
+        <el-table-column :label="$t('人脸图片')" width="82"><template #default="{ row }"><FaceThumbnail :src="row.thumbnailUrl" /></template></el-table-column>
         <el-table-column prop="faceId" :label="$t('人脸 ID')" min-width="220"><template #default="{ row }"><span class="mono">{{ row.faceId }}</span></template></el-table-column>
         <el-table-column prop="faceScore" :label="$t('质量分')" width="100" />
         <el-table-column :label="$t('向量状态')" width="120"><template #default="{ row }"><StatusTag :status="row.embeddingStatus" /></template></el-table-column>
@@ -35,6 +36,7 @@ import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Save, ScanFace, Search, Trash2, Users } from '@lucide/vue'
 import PageHeader from '@/components/PageHeader.vue'
+import FaceThumbnail from '@/components/FaceThumbnail.vue'
 import SampleForm from '@/components/SampleForm.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import * as faceApi from '@/api/face'

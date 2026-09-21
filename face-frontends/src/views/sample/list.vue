@@ -25,6 +25,7 @@
         <template #default="{ row }">
           <div class="face-table">
             <el-table :data="row.faces || []" :empty-text="$t('该样本尚未录入人脸')" size="small">
+              <el-table-column :label="$t('人脸图片')" width="82"><template #default="scope"><FaceThumbnail :src="scope.row.thumbnailUrl" /></template></el-table-column>
               <el-table-column prop="faceId" :label="$t('人脸 ID')" min-width="210"><template #default="scope"><span class="mono">{{ scope.row.faceId }}</span></template></el-table-column>
               <el-table-column prop="faceScore" :label="$t('质量分')" width="100" />
               <el-table-column :label="$t('向量状态')" width="120"><template #default="scope"><StatusTag :status="scope.row.embeddingStatus" /></template></el-table-column>
@@ -53,6 +54,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, Eye, Plus, Search, Trash2 } from '@lucide/vue'
 import PageHeader from '@/components/PageHeader.vue'
+import FaceThumbnail from '@/components/FaceThumbnail.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import * as sampleApi from '@/api/sample'
 
