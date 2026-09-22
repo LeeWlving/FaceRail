@@ -6,21 +6,21 @@
         <div class="brand-mark">FR</div>
         <div>
           <strong>FaceRail</strong>
-          <span>视觉检索控制台</span>
+          <span>{{ $t('视觉检索控制台') }}</span>
         </div>
-        <el-tooltip content="关闭导航" placement="right">
+        <el-tooltip :content="$t('关闭导航')" placement="right">
           <button class="icon-button sidebar-close" type="button" @click="drawerOpen = false">
             <X :size="18" />
           </button>
         </el-tooltip>
       </div>
 
-      <nav class="nav-groups" aria-label="主导航">
+      <nav class="nav-groups" :aria-label="$t('主导航')">
         <section v-for="group in navigation" :key="group.label" class="nav-group">
-          <p>{{ group.label }}</p>
+          <p>{{ $t(group.label) }}</p>
           <RouterLink v-for="item in group.items" :key="item.to" :to="item.to" class="nav-item">
             <component :is="item.icon" :size="18" />
-            <span>{{ item.label }}</span>
+            <span>{{ $t(item.label) }}</span>
             <ChevronRight class="nav-arrow" :size="15" />
           </RouterLink>
         </section>
@@ -37,16 +37,17 @@
 
     <main class="main-area">
       <header class="topbar">
-        <el-tooltip content="打开导航" placement="bottom">
+        <el-tooltip :content="$t('打开导航')" placement="bottom">
           <button class="icon-button menu-button" type="button" @click="drawerOpen = true">
             <Menu :size="20" />
           </button>
         </el-tooltip>
         <div class="breadcrumb">
-          <span>{{ route.meta.section }}</span>
+          <span>{{ $t(route.meta.section) }}</span>
           <ChevronRight :size="14" />
-          <strong>{{ route.meta.title }}</strong>
+          <strong>{{ $t(route.meta.title) }}</strong>
         </div>
+        <el-segmented v-model="language" :options="languageOptions" size="small" aria-label="Language" />
         <span class="topbar-version">API 2.1</span>
       </header>
 
@@ -64,6 +65,7 @@
 </template>
 
 <script setup>
+import { currentLocale, setLocale } from '@/i18n'
 import { ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import {
@@ -84,6 +86,8 @@ import {
 const route = useRoute()
 const drawerOpen = ref(false)
 
+const language = ref(currentLocale.value)
+const languageOptions = [{ label: '中文', value: 'zh-CN' }, { label: 'EN', value: 'en-US' }]
 const navigation = [
   {
     label: '识别',
@@ -114,4 +118,5 @@ const navigation = [
 watch(() => route.fullPath, () => {
   drawerOpen.value = false
 })
+watch(language, setLocale)
 </script>

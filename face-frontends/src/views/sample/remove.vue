@@ -1,22 +1,23 @@
 <template>
-  <PageHeader title="删除样本" description="删除样本会同时删除其人脸记录和已存储图片，此操作不可恢复。" />
+  <PageHeader :title="$t('删除样本')" :description="$t('删除样本会同时删除其人脸记录和已存储图片，此操作不可恢复。')" />
   <section class="workspace-panel danger-panel">
-    <div class="panel-heading"><h2>危险操作</h2><TriangleAlert :size="18" /></div>
+    <div class="panel-heading"><h2>{{ $t('危险操作') }}</h2><TriangleAlert :size="18" /></div>
     <div class="panel-body">
-      <el-alert title="确认该身份样本已不再参与搜索" type="error" :closable="false" show-icon />
+      <el-alert :title="$t('确认该身份样本已不再参与搜索')" type="error" :closable="false" show-icon />
       <el-form label-position="top" class="remove-form">
         <div class="form-grid">
-          <el-form-item label="命名空间"><el-input v-model="form.namespace" /></el-form-item>
-          <el-form-item label="集合名称"><el-input v-model="form.collectionName" /></el-form-item>
-          <el-form-item label="样本 ID"><el-input v-model="form.sampleId" /></el-form-item>
+          <el-form-item :label="$t('命名空间')"><el-input v-model="form.namespace" /></el-form-item>
+          <el-form-item :label="$t('集合名称')"><el-input v-model="form.collectionName" /></el-form-item>
+          <el-form-item :label="$t('样本 ID')"><el-input v-model="form.sampleId" /></el-form-item>
         </div>
       </el-form>
-      <div class="form-actions"><el-button type="danger" :loading="removing" @click="submit"><Trash2 :size="16" />永久删除</el-button></div>
+      <div class="form-actions"><el-button type="danger" :loading="removing" @click="submit"><Trash2 :size="16" />{{ $t('永久删除') }}</el-button></div>
     </div>
   </section>
 </template>
 
 <script setup>
+import { translate, translateWith } from '@/i18n'
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trash2, TriangleAlert } from '@lucide/vue'
@@ -30,14 +31,14 @@ const form = reactive({ namespace: String(route.query.namespace || ''), collecti
 
 async function submit() {
   if (!form.namespace || !form.collectionName || !form.sampleId) {
-    ElMessage.warning('请输入完整的样本标识')
+    ElMessage.warning(translate('请输入完整的样本标识'))
     return
   }
-  await ElMessageBox.confirm(`确认删除样本 ${form.sampleId}？`, '删除样本', { type: 'error', confirmButtonText: '确认删除', cancelButtonText: '取消' })
+  await ElMessageBox.confirm(translateWith('确认删除样本 {name}？', { name: form.sampleId }), translate('删除样本'), { type: 'error', confirmButtonText: translate('确认删除'), cancelButtonText: translate('取消') })
   removing.value = true
   try {
     await sampleApi.remove(form)
-    ElMessage.success('样本已删除')
+    ElMessage.success(translate('样本已删除'))
     router.push({ path: '/samples', query: { namespace: form.namespace, collectionName: form.collectionName } })
   } finally {
     removing.value = false

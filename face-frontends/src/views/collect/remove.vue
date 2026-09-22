@@ -1,23 +1,24 @@
 <template>
-  <PageHeader title="删除集合" description="删除集合会一并移除其中的样本、人脸和图片，此操作不可恢复。" />
+  <PageHeader :title="$t('删除集合')" :description="$t('删除集合会一并移除其中的样本、人脸和图片，此操作不可恢复。')" />
   <section class="workspace-panel danger-panel">
-    <div class="panel-heading"><h2>危险操作</h2><TriangleAlert :size="18" /></div>
+    <div class="panel-heading"><h2>{{ $t('危险操作') }}</h2><TriangleAlert :size="18" /></div>
     <div class="panel-body">
-      <el-alert title="请确认当前集合已不再使用" type="error" :closable="false" show-icon />
+      <el-alert :title="$t('请确认当前集合已不再使用')" type="error" :closable="false" show-icon />
       <el-form label-position="top" class="remove-form">
         <div class="form-grid">
-          <el-form-item label="命名空间"><el-input v-model="form.namespace" /></el-form-item>
-          <el-form-item label="集合名称"><el-input v-model="form.collectionName" /></el-form-item>
+          <el-form-item :label="$t('命名空间')"><el-input v-model="form.namespace" /></el-form-item>
+          <el-form-item :label="$t('集合名称')"><el-input v-model="form.collectionName" /></el-form-item>
         </div>
       </el-form>
       <div class="form-actions">
-        <el-button type="danger" :loading="removing" @click="submit"><Trash2 :size="16" />永久删除</el-button>
+        <el-button type="danger" :loading="removing" @click="submit"><Trash2 :size="16" />{{ $t('永久删除') }}</el-button>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
+import { translate, translateWith } from '@/i18n'
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trash2, TriangleAlert } from '@lucide/vue'
@@ -31,14 +32,15 @@ const form = reactive({ namespace: String(route.query.namespace || ''), collecti
 
 async function submit() {
   if (!form.namespace || !form.collectionName) {
-    ElMessage.warning('请输入命名空间和集合名称')
+    ElMessage.warning(translate('请输入命名空间和集合名称'))
     return
   }
-  await ElMessageBox.confirm(`确认删除集合 ${form.namespace}/${form.collectionName}？`, '删除集合', { type: 'error', confirmButtonText: '确认删除', cancelButtonText: '取消' })
+  const name = `${form.namespace}/${form.collectionName}`
+  await ElMessageBox.confirm(translateWith('确认删除集合 {name}？', { name }), translate('删除集合'), { type: 'error', confirmButtonText: translate('确认删除'), cancelButtonText: translate('取消') })
   removing.value = true
   try {
     await collectApi.remove(form)
-    ElMessage.success('集合已删除')
+    ElMessage.success(translate('集合已删除'))
     router.push({ path: '/collections', query: { namespace: form.namespace } })
   } finally {
     removing.value = false

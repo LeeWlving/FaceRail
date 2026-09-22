@@ -30,7 +30,7 @@ module Api
 
     def index
       order = params[:order].to_s.downcase == "desc" ? :desc : :asc
-      samples = sample_collection.face_samples.includes(:face_records)
+      samples = sample_collection.face_samples.includes(face_records: attachment_includes)
         .order(created_at: order)
         .offset([params.fetch(:offset, 0).to_i, 0].max)
         .limit([[params.fetch(:limit, 10).to_i, 1].max, 100].min)
@@ -55,13 +55,22 @@ module Api
     end
 
     def sample
-      @sample ||= sample_collection.face_samples.find_by!(sample_key: params.require(:sampleId))
+      @sample ||= sample_collection.face_samples
+        .includes(face_records: attachment_includes)
+        .find_by!(sample_key: params.require(:sampleId))
     rescue ActiveRecord::RecordNotFound
       raise FaceSearch::Error, "sample_id is not exist"
     end
 
     def normalized_metadata
       MetadataFields.normalize(sample_params[:sampleData], sample_collection.sample_columns)
+    end
+
+    def attachment_includes
+      [
+        { source_image_attachment: :blob },
+        { face_image_attachment: :blob }
+      ]
     end
   end
 end

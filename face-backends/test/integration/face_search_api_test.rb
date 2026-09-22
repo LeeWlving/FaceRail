@@ -82,6 +82,10 @@ class FaceSearchApiTest < ActionDispatch::IntegrationTest
     assert face_record.source_image.attached?
     assert face_record.face_image.attached?
 
+    get "/api/visual/sample/get", params: sample_identity
+    thumbnail_url = response_data.fetch("faces").first.fetch("thumbnailUrl")
+    assert_match %r{\A/rails/active_storage/blobs/redirect/}, thumbnail_url
+
     post "/api/visual/search/do", params: @collection.slice(:namespace, :collectionName).merge(
       imageBase64: encoded("face-a")
     ), as: :json

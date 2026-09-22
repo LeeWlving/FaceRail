@@ -1,6 +1,6 @@
 <template>
   <div v-if="imageUrl" class="face-overlay">
-    <img :src="imageUrl" alt="人脸分析图片" @load="onLoad" />
+    <img :src="imageUrl" :alt="$t('人脸分析图片')" @load="onLoad" />
     <div
       v-for="(box, index) in boxes"
       :key="index"
