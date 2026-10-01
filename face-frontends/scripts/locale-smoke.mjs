@@ -17,7 +17,7 @@ const copy = {
   'zh-CN': {
     search: '人脸搜索', searchButton: '开始搜索', searchCriteria: '查询条件', searchResults: '搜索结果',
     searchEmpty: '上传图片并开始搜索', missingIdentifiers: '请输入命名空间和集合名称', missingQueryImage: '请选择查询图片',
-    namespace: '命名空间', collectionName: '集合名称', advanced: '高级参数', selectedImage: '已选择图片',
+    namespace: '命名空间', collectionName: '集合名称', advanced: '高级参数', resultLimit: '返回数量', selectedImage: '已选择图片',
     sampleId: '样本 ID', matchScore: '匹配分', noMatches: '没有达到阈值的匹配',
     collections: '集合列表', query: '查询', collectionEmpty: '输入命名空间后查询', missingNamespace: '请输入命名空间',
     retainImages: '保留图片', yes: '是',
@@ -28,7 +28,7 @@ const copy = {
   'en-US': {
     search: 'Face Search', searchButton: 'Search', searchCriteria: 'Search Criteria', searchResults: 'Search Results',
     searchEmpty: 'Upload an image to start searching', missingIdentifiers: 'Enter the namespace and collection name', missingQueryImage: 'Select a query image',
-    namespace: 'Namespace', collectionName: 'Collection Name', advanced: 'Advanced Options', selectedImage: 'Selected image',
+    namespace: 'Namespace', collectionName: 'Collection Name', advanced: 'Advanced Options', resultLimit: 'Result Limit', selectedImage: 'Selected image',
     sampleId: 'Sample ID', matchScore: 'Match Score', noMatches: 'No matches reached the threshold',
     collections: 'Collection List', query: 'Search', collectionEmpty: 'Enter a namespace to search', missingNamespace: 'Enter a namespace',
     retainImages: 'Retain Images', yes: 'Yes',
@@ -54,6 +54,19 @@ async function submitAndWait(page, button, path) {
   ])
   assert.equal(response.status(), 200)
   assert.equal(await response.finished(), null)
+}
+
+async function expandAdvanced(page, name) {
+  const header = page.getByRole('button', { name, exact: true })
+  await visible(header)
+  assert.equal(await header.getAttribute('aria-expanded'), 'false')
+  // Activate the focusable collapse header, not its nested title span.
+  await header.press('Enter')
+  await visible(page.getByRole('button', { name, exact: true, expanded: true }))
+  const region = page.getByRole('region', { name, exact: true })
+  await visible(region)
+  assert.equal(await region.getAttribute('aria-hidden'), 'false')
+  return region
 }
 
 async function runLocale(browser, baseUrl, locale) {
@@ -139,8 +152,10 @@ async function runLocale(browser, baseUrl, locale) {
     await visible(page.getByRole('cell', { name: '98.50', exact: true }))
     assert.deepEqual(apiRequests('/visual/search/do').map(({ payload }) => payload), [{ namespace, collectionName, imageBase64 }])
 
-    await page.getByText(text.advanced, { exact: true }).click()
-    await page.getByRole('spinbutton').first().fill('3')
+    const searchOptions = await expandAdvanced(page, text.advanced)
+    const resultLimit = searchOptions.getByRole('spinbutton', { name: text.resultLimit, exact: true })
+    await visible(resultLimit)
+    await resultLimit.fill('3')
     await submitAndWait(page, searchButton, '/api/visual/search/do')
     await visible(page.getByRole('cell', { name: 'smoke_sample', exact: true }))
     assert.deepEqual(apiRequests('/visual/search/do').at(-1).payload, {
@@ -192,7 +207,7 @@ async function runLocale(browser, baseUrl, locale) {
     assert.equal(await page.locator('.face-previews .face-overlay').count(), 2)
     assert.deepEqual(apiRequests('/visual/compare/do').map(({ payload }) => payload), [{ imageBase64A: imageBase64, imageBase64B }])
 
-    await page.getByText(text.advanced, { exact: true }).click()
+    await expandAdvanced(page, text.advanced)
     const faceInfoCheckbox = page.getByRole('checkbox', { name: text.faceInfo, exact: true })
     assert.equal(await faceInfoCheckbox.isChecked(), true)
     // Element Plus hides the native input; use the visible translated label.
@@ -209,6 +224,22 @@ async function runLocale(browser, baseUrl, locale) {
     console.log(`${locale}: compare validation, two uploads, translated metrics, and optional face info passed`)
   } catch (error) {
     if (errors.length) console.error(errors.join('\n'))
+    // Preserve useful evidence if a collapse state or its controls regress in CI.
+    const collapse = await page.locator('.el-collapse-item').evaluateAll((items) => items.map((item) => {
+      const header = item.querySelector('[role="button"]')
+      const region = item.querySelector('[role="region"]')
+      return {
+        header: header?.outerHTML,
+        expanded: header?.getAttribute('aria-expanded'),
+        regionHidden: region?.getAttribute('aria-hidden'),
+        regionStyle: region?.getAttribute('style'),
+        inputs: [...item.querySelectorAll('input')].map((input) => ({
+          id: input.id, value: input.value, visible: input.checkVisibility(),
+          width: input.getBoundingClientRect().width, height: input.getBoundingClientRect().height,
+        })),
+      }
+    }))
+    console.error(`${locale}: collapse diagnostics: ${JSON.stringify(collapse)}`)
     throw new Error(`${locale}: ${error.message}`, { cause: error })
   } finally {
     await context.close()
