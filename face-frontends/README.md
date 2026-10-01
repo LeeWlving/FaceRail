@@ -43,9 +43,14 @@ VITE_API_BASE_URL=http://127.0.0.1:8080 npm run dev
 
 ```bash
 npm run lint
+npm run test:unit
 npm run build
+npx playwright install chromium
+npm run test:smoke
 npm run test:visual
 ```
+
+`test:smoke` 自动启动构建产物的本地 Vite preview，并在 `zh-CN`、`en-US` 下检查语言切换与持久化、搜索上传和结果、集合查询和刷新、双图片比对及高级参数。所有 API 均由浏览器路由 mock，未知网络请求会导致失败，不需要后端或 R2 凭据。默认使用 Playwright 安装的 Chromium；已有浏览器时可用 `CHROME_PATH=/path/to/chromium npm run test:smoke`。Linux CI 可先运行 `npx playwright install --with-deps chromium`。
 
 视觉检查默认使用 macOS 中的 Google Chrome，可通过 `CHROME_PATH` 指定其他 Chromium 可执行文件。
 

@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test:unit": "node --test tests/*.test.js",
+    "test:smoke": "node scripts/locale-smoke.mjs",
     "test:visual": "node scripts/visual-check.mjs"
   },
   "dependencies": {

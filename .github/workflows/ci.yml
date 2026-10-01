@@ -129,6 +129,12 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Install Chromium for browser smoke tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Test Chinese and English UI flows
+        run: npm run test:smoke
+
   publish_images:
     name: Publish ${{ matrix.name }} image
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
