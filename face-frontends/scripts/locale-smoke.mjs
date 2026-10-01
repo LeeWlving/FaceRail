@@ -193,7 +193,11 @@ async function runLocale(browser, baseUrl, locale) {
     assert.deepEqual(apiRequests('/visual/compare/do').map(({ payload }) => payload), [{ imageBase64A: imageBase64, imageBase64B }])
 
     await page.getByText(text.advanced, { exact: true }).click()
-    await page.getByRole('checkbox', { name: text.faceInfo, exact: true }).uncheck()
+    const faceInfoCheckbox = page.getByRole('checkbox', { name: text.faceInfo, exact: true })
+    assert.equal(await faceInfoCheckbox.isChecked(), true)
+    // Element Plus hides the native input; use the visible translated label.
+    await page.getByText(text.faceInfo, { exact: true }).click()
+    assert.equal(await faceInfoCheckbox.isChecked(), false)
     await submitAndWait(page, compareButton, '/api/visual/compare/do')
     await visible(page.getByRole('heading', { name: text.compareResults, exact: true }))
     assert.deepEqual(apiRequests('/visual/compare/do').at(-1).payload, {
