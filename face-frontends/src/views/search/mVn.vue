@@ -14,8 +14,8 @@
         <el-collapse v-model="advancedSections" class="advanced-options">
           <el-collapse-item :title="$t('高级参数')" name="recognition">
             <div class="form-grid">
-              <el-form-item :label="$t('返回数量')"><el-input-number v-model="form.limit" :min="1" :max="100" /></el-form-item>
-              <el-form-item :label="$t('最多检测人脸')"><el-input-number v-model="form.maxFaceNum" :min="1" :max="20" /></el-form-item>
+              <el-form-item label-position="top" :label="$t('返回数量')"><el-input-number v-model="form.limit" :min="1" :max="100" /></el-form-item>
+              <el-form-item label-position="top" :label="$t('最多检测人脸')"><el-input-number v-model="form.maxFaceNum" :min="1" :max="20" /></el-form-item>
             </div>
             <div class="compact-slider"><span>{{ $t('最低匹配分') }} {{ form.confidenceThreshold }}</span><el-slider v-model="form.confidenceThreshold" :min="-100" :max="100" /></div>
             <div class="compact-slider"><span>{{ $t('人脸质量阈值') }} {{ form.faceScoreThreshold }}</span><el-slider v-model="form.faceScoreThreshold" :min="0" :max="100" /></div>
