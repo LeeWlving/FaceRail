@@ -17,7 +17,7 @@ const copy = {
   'zh-CN': {
     search: '人脸搜索', searchButton: '开始搜索', searchCriteria: '查询条件', searchResults: '搜索结果',
     searchEmpty: '上传图片并开始搜索', missingIdentifiers: '请输入命名空间和集合名称', missingQueryImage: '请选择查询图片',
-    namespace: '命名空间', collectionName: '集合名称', advanced: '高级参数', resultLimit: '返回数量', selectedImage: '已选择图片',
+    namespace: '命名空间', collectionName: '集合名称', advanced: '高级参数', resultLimit: '返回数量', maximumFaces: '最多检测人脸', selectedImage: '已选择图片',
     sampleId: '样本 ID', matchScore: '匹配分', noMatches: '没有达到阈值的匹配',
     collections: '集合列表', query: '查询', collectionEmpty: '输入命名空间后查询', missingNamespace: '请输入命名空间',
     retainImages: '保留图片', yes: '是',
@@ -28,7 +28,7 @@ const copy = {
   'en-US': {
     search: 'Face Search', searchButton: 'Search', searchCriteria: 'Search Criteria', searchResults: 'Search Results',
     searchEmpty: 'Upload an image to start searching', missingIdentifiers: 'Enter the namespace and collection name', missingQueryImage: 'Select a query image',
-    namespace: 'Namespace', collectionName: 'Collection Name', advanced: 'Advanced Options', resultLimit: 'Result Limit', selectedImage: 'Selected image',
+    namespace: 'Namespace', collectionName: 'Collection Name', advanced: 'Advanced Options', resultLimit: 'Result Limit', maximumFaces: 'Maximum Faces', selectedImage: 'Selected image',
     sampleId: 'Sample ID', matchScore: 'Match Score', noMatches: 'No matches reached the threshold',
     collections: 'Collection List', query: 'Search', collectionEmpty: 'Enter a namespace to search', missingNamespace: 'Enter a namespace',
     retainImages: 'Retain Images', yes: 'Yes',
@@ -153,13 +153,19 @@ async function runLocale(browser, baseUrl, locale) {
     assert.deepEqual(apiRequests('/visual/search/do').map(({ payload }) => payload), [{ namespace, collectionName, imageBase64 }])
 
     const searchOptions = await expandAdvanced(page, text.advanced)
-    const resultLimit = searchOptions.getByRole('spinbutton', { name: text.resultLimit, exact: true })
-    await visible(resultLimit)
-    await resultLimit.fill('3')
+    for (const [name, value] of [[text.resultLimit, '3'], [text.maximumFaces, '2']]) {
+      const input = searchOptions.getByRole('spinbutton', { name, exact: true })
+      await visible(input)
+      const bounds = await input.boundingBox()
+      assert.ok(bounds && bounds.width > 0 && bounds.height > 0, `${locale}: ${name} must have usable dimensions`)
+      await input.fill(value)
+      await input.press('Tab')
+      assert.equal(await input.inputValue(), value)
+    }
     await submitAndWait(page, searchButton, '/api/visual/search/do')
     await visible(page.getByRole('cell', { name: 'smoke_sample', exact: true }))
     assert.deepEqual(apiRequests('/visual/search/do').at(-1).payload, {
-      namespace, collectionName, imageBase64, confidenceThreshold: 0, faceScoreThreshold: 0, limit: 3, maxFaceNum: 5,
+      namespace, collectionName, imageBase64, confidenceThreshold: 0, faceScoreThreshold: 0, limit: 3, maxFaceNum: 2,
     })
     assert.equal(apiRequests('/visual/search/do').length, 2)
     console.log(`${locale}: search validation, upload, results, advanced options, and locale persistence passed`)
