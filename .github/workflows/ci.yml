@@ -47,7 +47,7 @@ jobs:
           bundler-cache: true
 
       - name: Prepare RuboCop cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         env:
           DEPENDENCIES_HASH: ${{ hashFiles('face-backends/.ruby-version', 'face-backends/**/.rubocop.yml', 'face-backends/**/.rubocop_todo.yml', 'face-backends/Gemfile.lock') }}
         with:
