@@ -77,7 +77,7 @@ FaceRail/
 ### 环境要求
 
 - Ruby 4.0.5
-- Node.js 20.19 或更高版本
+- Node.js 22.x（至少 22.18），或 24.11 及以上版本
 - PostgreSQL 17 与 pgvector
 - libvips
 - 两个 ONNX 模型文件
